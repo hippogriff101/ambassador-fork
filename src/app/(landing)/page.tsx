@@ -1,4 +1,6 @@
+import type { ComponentProps } from "react";
 import Image from "next/image";
+
 import logo from "@/assets/landing/logo.png";
 import highlight from "@/assets/landing/highlight.svg";
 import flagHoldingText from "@/assets/landing/flagholdingtext.png";
@@ -20,6 +22,22 @@ import orphThumbsUp from "@/assets/landing/emotes/orph-thumbsup.png";
 import orphWowCute from "@/assets/landing/emotes/orph-wowcute.png";
 
 import hcRounded from "@/assets/landing/hc-rounded.svg";
+
+import sep from "@/assets/landing/sep.png";
+
+const Sep = ({
+  className = "",
+  ...props
+}: Omit<ComponentProps<typeof Image>, "src" | "alt">) => (
+  <Image
+    {...props}
+    src={sep}
+    alt=""
+    role="presentation"
+    className={`w-full h-auto ${className}`}
+    sizes="100vw"
+  />
+);
 
 export default function Home() {
   return (
@@ -63,7 +81,8 @@ export default function Home() {
           className="h-96 w-auto"
         />
       </div>
-      <div className="p-12">
+      <div className="p-12 relative">
+        <Sep className="absolute top-0 -translate-y-1/2 inset-x-0" />
         <p className="text-neutral-500 text-xl font-jersey">
           --- START OF MESSAGE ---
         </p>
@@ -111,6 +130,8 @@ export default function Home() {
       </div>
       <div className="p-12 bg-linear-to-b from-indigo-200 relative isolate to-violet-300">
         <div className="absolute inset-0 bg-noise -z-10" />
+        <Sep className="absolute top-0 -translate-y-1/2 inset-x-0" />
+
         <h2 className="text-5xl font-jersey">Past events</h2>
         <div className="leading-relaxed text-3xl text-pretty space-y-4 mt-4">
           <p>
@@ -302,7 +323,8 @@ export default function Home() {
           />
         </div>
       </div>
-      <div className="p-12">
+      <div className="p-12 relative">
+        <Sep className="absolute top-0 -translate-y-1/2 inset-x-0" />
         <h2 className="text-5xl font-jersey">Questions you might have</h2>
         <div className="mt-6 border-t border-neutral-300">
           <div className="py-4 border-b border-neutral-300 leading-relaxed text-xl">
@@ -348,6 +370,7 @@ export default function Home() {
       </div>
 
       <footer className="bg-neutral-900 mt-8 relative text-white">
+        <Sep className="absolute top-0 -translate-y-1/2 inset-x-0" />
         {/* TODO: add variation with closed eyes on hover */}
         <Image
           src={orphHappy}
