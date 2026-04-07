@@ -30,6 +30,7 @@ import orphWowCute from "@/assets/landing/emotes/orph-wowcute.png";
 import hcRounded from "@/assets/landing/hc-rounded.svg";
 
 import sep from "@/assets/landing/sep.png";
+import Link from "next/link";
 
 const Sep = ({
   className = "",
@@ -48,72 +49,89 @@ const Sep = ({
 export default function Home() {
   return (
     <>
-      <div className="p-12 flex gap-8 items-center justify-between bg-grid bg-neutral-50">
-        <div>
-          <div className="relative w-fit">
-            <Image
-              src={become}
-              alt="Become a"
-              className="h-4 mb-2 -rotate-2 w-auto"
-            />
-            <Image
-              src={becomeArrow}
-              alt=""
-              role="presentation"
-              className="h-8 absolute top-1/2 right-full mr-1 w-auto"
-            />
-          </div>
-          <div className="relative w-fit">
-            <Image
-              src={ambassador}
-              alt="Hack Club Ambassador"
-              className="h-24 w-auto"
-            />
-            <div className="absolute -bottom-5 rotate-2 -right-2">
+      <div className="bg-grid bg-neutral-50">
+        <header className="px-12 pt-6 flex items-center">
+          <Image
+            src={orphHappy}
+            alt=""
+            role="presentation"
+            className="h-12 w-auto"
+          />
+          <div className="flex-1 min-w-0"></div>
+          <Link
+            href="/auth"
+            className="font-medium hover:text-black hover:underline underline-offset-2 transition hover:scale-105 text-neutral-600 text-sm"
+          >
+            Log in
+          </Link>
+        </header>
+        <div className="p-12 flex gap-8 items-center justify-between">
+          <div>
+            <div className="relative w-fit">
               <Image
-                src={summer26Bg}
+                src={become}
+                alt="Become a"
+                className="h-4 mb-2 -rotate-2 w-auto"
+              />
+              <Image
+                src={becomeArrow}
                 alt=""
                 role="presentation"
-                className="h-8 w-auto"
-              />
-              <Image
-                src={summer26Fg}
-                alt="Summer '26"
-                className="h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto"
+                className="h-8 absolute top-1/2 right-full mr-1 w-auto"
               />
             </div>
-          </div>
-          <h1 className="text-5xl mt-8 font-jersey">
-            Inspire more teens like you to code.
-          </h1>
-          <h1 className="text-5xl relative isolate font-jersey">
-            Get money.
-            <span className="relative ml-4">
-              Repeat.
+            <div className="relative w-fit">
               <Image
-                src={highlight}
+                src={ambassador}
                 alt="Hack Club Ambassador"
-                className="h-12 max-w-none absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto"
+                className="h-24 w-auto"
               />
-            </span>
-          </h1>
+              <div className="absolute -bottom-5 rotate-2 -right-2">
+                <Image
+                  src={summer26Bg}
+                  alt=""
+                  role="presentation"
+                  className="h-8 w-auto"
+                />
+                <Image
+                  src={summer26Fg}
+                  alt="Summer '26"
+                  className="h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto"
+                />
+              </div>
+            </div>
+            <h1 className="text-5xl mt-8 font-jersey">
+              Inspire more teens like you to code.
+            </h1>
+            <h1 className="text-5xl relative isolate font-jersey">
+              Get money.
+              <span className="relative ml-4">
+                Repeat.
+                <Image
+                  src={highlight}
+                  alt="Hack Club Ambassador"
+                  className="h-12 max-w-none absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto"
+                />
+              </span>
+            </h1>
 
-          <button
-            type="button"
-            className="mt-6 corner-squircle rounded-full hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-14 px-5 flex items-center"
-          >
-            <span className="font-jersey text-3xl uppercase">Apply</span>
-          </button>
-          <p className="mt-4 text-neutral-600 text-sm">
-            14 days left, US, UK, CA, EU, AU only
-          </p>
+            <button
+              type="button"
+              className="mt-6 corner-squircle rounded-full hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-14 px-5 flex items-center"
+            >
+              <span className="font-jersey text-3xl uppercase">Apply</span>
+            </button>
+            <p className="mt-4 text-neutral-600 text-sm">
+              14 days left, US, UK, CA, EU, AU only
+            </p>
+          </div>
+          <Image
+            src={flagHoldingText}
+            alt=""
+            role="presentation"
+            className="h-96 w-auto"
+          />
         </div>
-        <Image
-          src={flagHoldingText}
-          alt=""
-          role="presentation"
-          className="h-96 w-auto"
-        />
       </div>
       <div className="p-12 relative">
         <Sep className="absolute top-0 -translate-y-1/2 inset-x-0" />
@@ -451,7 +469,7 @@ export default function Home() {
             applications close [tbd] April 2026, at 12:00am EDT.
           </p>
         </div>
-        <div className="px-12 pb-8 pt-4 flex items-center">
+        <div className="px-12 pb-6 flex items-center">
           <a href="https://hackclub.com" target="_blank" rel="noreferrer">
             <Image src={hcRounded} alt="Hack Club" className="h-8 w-auto" />
           </a>
