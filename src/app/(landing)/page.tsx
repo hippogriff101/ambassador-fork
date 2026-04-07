@@ -127,9 +127,9 @@ export default function Home() {
             space online made for them, and maybe make a few friends too.
           </p>
           <p>
-            This summer, we&rsquo;re planning our most ambitious summer event
-            yet. We&rsquo;re partnering with NASA, AMD, and GitHub to run the
-            world&rsquo;s biggest engineering challenge, and we want your help.
+            This summer, we&rsquo;re partnering with NASA, AMD, and GitHub to
+            run <strong>the world&rsquo;s biggest engineering challenge</strong>
+            , and we want your help.
           </p>
           <p>
             We&rsquo;re looking for young people like you to advertise Hack Club
@@ -141,13 +141,13 @@ export default function Home() {
             media, or do anything really - how you do outreach is up to you.
           </p>
           <p>
-            In return, we&rsquo;ll give you exclusive Ambassador t-shirts and
-            merch. Plus, for every poster you put up, and every signup you get,{" "}
-            <strong>we give you money.</strong> Real money. To your bank
-            account.
+            In return, you&rsquo;ll get an exclusive{" "}
+            <em>@events.hackclub.com </em> email, and we&rsquo;ll give you Hack
+            Club t-shirts and merch. Plus, for every poster you put up, and
+            every signup you get, <strong>we give you money.</strong> Real
+            money. To your bank account.
           </p>
           <p>Ready?</p>
-          <p>copy subject to change</p>
 
           <button
             type="button"
@@ -157,6 +157,9 @@ export default function Home() {
           </button>
           <p className="mt-4 text-neutral-600 text-sm">
             14 days left, US, UK, CA, EU, AU only
+          </p>
+          <p className="text-neutral-500 mt-4 text-xl font-jersey">
+            &lt;&lt;EOF
           </p>
         </div>
       </div>
@@ -371,8 +374,8 @@ export default function Home() {
             <p className="font-bold">How does this work?</p>
             <p className="mt-2">
               We&rsquo;ve already made some amazing posters for you, so all you
-              have to do is print them out (from this website) and put them up
-              for people to see! Please remember to follow any local laws about
+              have to do is print them out from our platform and put them up for
+              people to see! Please remember to follow any local laws about
               putting up posters - you could look into places like local shops
               or community boards.
             </p>
@@ -382,10 +385,29 @@ export default function Home() {
             </p>
           </div>
           <div className="py-4 border-b border-neutral-300 leading-relaxed text-xl">
+            <p className="font-bold">What do I get?</p>
+            <p className="mt-2">
+              We&rsquo;ll give you $1.00 for every poster you put up (with a
+              photo!), and $0.50 for every person who signs up and verifies
+              themselves as under 18.
+            </p>
+            <p className="mt-2 text-base text-neutral-600">
+              example: if you put up 15 posters in a month, and 10 people sign
+              up <span className="underline">per poster</span>, that&rsquo;s $15
+              + $75 = $90 for that month!
+            </p>
+            <p className="mt-2">
+              We&rsquo;ll also give you Hack Club branded merch, and an
+              exclusive <em>@events.hackclub.com</em> email.
+            </p>
+          </div>
+          <div className="py-4 border-b border-neutral-300 leading-relaxed text-xl">
             <p className="font-bold">Who can apply?</p>
             <p className="mt-2">
               Teenagers aged 13-18 from the United States, United Kingdom,
-              Canada, Europe and Australia can apply.
+              Canada, Europe and Australia can apply. You&rsquo;ll need to be
+              able to get to places around your city - this may involve walking,
+              biking, driving, or taking public transit, it&rsquo;s up to you.
             </p>
             <p className="mt-2">
               We hope to add more countries in the future, but this is a brand
