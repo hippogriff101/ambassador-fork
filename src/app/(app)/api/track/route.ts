@@ -1,7 +1,11 @@
 import type { NextRequest } from "next/server";
 
 import { ensureSchema } from "@/lib/ensure-schema";
-import { linkAnonymousVisits, trackAnonymousVisit, trackAuthenticatedVisit } from "@/lib/geo";
+import {
+  linkAnonymousVisits,
+  trackAnonymousVisit,
+  trackAuthenticatedVisit,
+} from "@/lib/geo";
 import { getRequestIp, isSameOriginRequest } from "@/lib/http";
 import { verifyToken } from "@/lib/session";
 
