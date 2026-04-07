@@ -15,6 +15,10 @@ import biblicallyAccurate from "@/assets/landing/projects-bg/biblically-accurate
 import specter from "@/assets/landing/projects-bg/specter.png";
 import blindDefusal from "@/assets/landing/projects-bg/blind-defusal.png";
 
+import orphHappy from "@/assets/landing/emotes/orph-happy.png";
+import orphThumbsUp from "@/assets/landing/emotes/orph-thumbsup.png";
+import orphWowCute from "@/assets/landing/emotes/orph-wowcute.png";
+
 import hcRounded from "@/assets/landing/hc-rounded.svg";
 
 export default function Home() {
@@ -44,9 +48,9 @@ export default function Home() {
 
           <button
             type="button"
-            className="mt-6 corner-squircle rounded-3xl hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-12 px-4 flex items-center"
+            className="mt-6 corner-squircle rounded-full hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-14 px-5 flex items-center"
           >
-            <span className="font-jersey text-2xl uppercase">Apply</span>
+            <span className="font-jersey text-3xl uppercase">Apply</span>
           </button>
           <p className="mt-4 text-neutral-600 text-sm">
             14 days left, US, UK, CA, EU, AU only
@@ -96,9 +100,9 @@ export default function Home() {
 
           <button
             type="button"
-            className="mt-4 corner-squircle rounded-3xl hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-12 px-4 flex items-center"
+            className="mt-4 corner-squircle rounded-full hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-14 px-5 flex items-center"
           >
-            <span className="font-jersey text-2xl uppercase">Apply</span>
+            <span className="font-jersey text-3xl uppercase">Apply</span>
           </button>
           <p className="mt-4 text-neutral-600 text-sm">
             14 days left, US, UK, CA, EU, AU only
@@ -142,11 +146,19 @@ export default function Home() {
             </p>
           </section>
           <section>
-            <Image
-              src={midnight}
-              alt=""
-              className="w-full aspect-3/2 object-cover border-[0.75rem] border-white shadow-lg"
-            />
+            <div className="relative">
+              <Image
+                src={midnight}
+                alt=""
+                className="w-full aspect-3/2 object-cover border-[0.75rem] border-white shadow-lg"
+              />
+              <Image
+                src={orphWowCute}
+                alt=""
+                role="presentation"
+                className="h-24 -left-8 -bottom-8 -rotate-3 -scale-x-100 absolute w-auto"
+              />
+            </div>
             <p className="mt-6 text-xl font-bold">Midnight</p>
             <p className="mt-1 text-xl">
               A murder-mystery hackathon held in Austria, Vienna with 60+
@@ -172,7 +184,7 @@ export default function Home() {
         <h2 className="text-5xl font-jersey">
           Past projects built by teenagers in Hack Club
         </h2>
-        <div className="mt-8 gap-6 text-black grid grid-cols-3">
+        <div className="mt-8 gap-6 relative text-black grid grid-cols-3">
           <div className="relative @container">
             <Image
               src={doomPdf}
@@ -281,6 +293,13 @@ export default function Home() {
               </p>
             </div>
           </div>
+
+          <Image
+            src={orphThumbsUp}
+            alt=""
+            role="presentation"
+            className="h-32 right-0 absolute w-auto bottom-0 translate-y-1/2"
+          />
         </div>
       </div>
       <div className="p-12">
@@ -328,12 +347,19 @@ export default function Home() {
         </p>
       </div>
 
-      <footer className="bg-neutral-900 text-white">
-        <div className="text-center p-12">
+      <footer className="bg-neutral-900 mt-8 relative text-white">
+        {/* TODO: add variation with closed eyes on hover */}
+        <Image
+          src={orphHappy}
+          alt=""
+          role="presentation"
+          className="h-32 left-1/2 absolute w-auto top-0 -translate-x-1/2 -translate-y-1/2"
+        />
+        <div className="text-center p-12 pt-16">
           <h2 className="text-5xl font-jersey">Make your mark.</h2>
           <button
             type="button"
-            className="mt-6 h-36 px-20 rounded-[4rem] hover:bg-rose-700 transition hover:scale-105 bg-primary corner-squircle"
+            className="mt-6 h-36 px-20 rounded-full hover:bg-rose-700 transition hover:scale-105 bg-primary corner-squircle"
           >
             <span className="font-jersey text-7xl uppercase">Apply</span>
           </button>
@@ -343,9 +369,9 @@ export default function Home() {
         </div>
         <div className="px-12 pb-8 pt-4 flex items-center">
           <a href="https://hackclub.com" target="_blank" rel="noreferrer">
-            <Image src={hcRounded} alt="Hack Club" className="h-12 w-auto" />
+            <Image src={hcRounded} alt="Hack Club" className="h-8 w-auto" />
           </a>
-          <p className="flex-1 text-right text-sm text-neutral-500">
+          <p className="flex-1 text-right text-xs text-neutral-500">
             © 2026 Hack Club. 501(c)(3) nonprofit (EIN: 81-2908499)
           </p>
         </div>
