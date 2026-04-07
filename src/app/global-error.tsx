@@ -7,7 +7,7 @@ import Icon from "@hackclub/icons";
 import { Button } from "@/components/ui/button";
 import { ErrorFrame } from "@/components/errors/error-frame";
 
-import "./globals.css";
+import "./(app)/globals.css";
 
 export default function GlobalError({
   error,

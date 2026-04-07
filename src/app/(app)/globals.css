@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@source "../components/**/*.{ts,tsx}";
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -17,7 +15,11 @@
   --secondary: #ffbf71;
   --secondary-foreground: #000;
   --muted: color-mix(in srgb, var(--foreground) 4%, var(--background));
-  --muted-foreground: color-mix(in srgb, var(--foreground) 72%, var(--background));
+  --muted-foreground: color-mix(
+    in srgb,
+    var(--foreground) 72%,
+    var(--background)
+  );
   --accent: #ffbf71;
   --accent-foreground: #000;
   --destructive: #ec3750;
@@ -29,7 +31,11 @@
   --input: color-mix(in srgb, var(--foreground) 10%, var(--background));
   --ring: #ec3750;
   --overlay-backdrop: rgb(0 0 0 / 78%);
-  --paper-grid-line: color-mix(in srgb, var(--foreground) 5%, var(--background));
+  --paper-grid-line: color-mix(
+    in srgb,
+    var(--foreground) 5%,
+    var(--background)
+  );
   --paper-grid-size: 16px;
   --topbar: #181818;
 }
@@ -203,19 +209,35 @@ a {
   }
 
   .border-white\/5 {
-    border-color: color-mix(in srgb, var(--foreground) 5%, transparent) !important;
+    border-color: color-mix(
+      in srgb,
+      var(--foreground) 5%,
+      transparent
+    ) !important;
   }
 
   .border-white\/10 {
-    border-color: color-mix(in srgb, var(--foreground) 10%, transparent) !important;
+    border-color: color-mix(
+      in srgb,
+      var(--foreground) 10%,
+      transparent
+    ) !important;
   }
 
   .ring-white\/10 {
-    --tw-ring-color: color-mix(in srgb, var(--foreground) 10%, transparent) !important;
+    --tw-ring-color: color-mix(
+      in srgb,
+      var(--foreground) 10%,
+      transparent
+    ) !important;
   }
 
   .focus-visible\:ring-white\/15:focus-visible {
-    --tw-ring-color: color-mix(in srgb, var(--foreground) 15%, transparent) !important;
+    --tw-ring-color: color-mix(
+      in srgb,
+      var(--foreground) 15%,
+      transparent
+    ) !important;
   }
 
   .hover\:bg-white:hover {
@@ -245,7 +267,11 @@ a {
   }
 
   [data-slot="select-item"]:focus {
-    background-color: color-mix(in srgb, var(--foreground) 8%, transparent) !important;
+    background-color: color-mix(
+      in srgb,
+      var(--foreground) 8%,
+      transparent
+    ) !important;
     color: var(--foreground) !important;
   }
 
@@ -272,11 +298,12 @@ a {
   }
 
   :is(
-    button:not(:disabled),
-    [data-slot="button"]:not(:disabled),
-    a[data-slot="button"],
-    a.inline-flex.rounded-xl
-  ):is(:hover, :focus-visible) svg {
+      button:not(:disabled),
+      [data-slot="button"]:not(:disabled),
+      a[data-slot="button"],
+      a.inline-flex.rounded-xl
+    ):is(:hover, :focus-visible)
+    svg {
     color: #fff !important;
   }
 }

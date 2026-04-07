@@ -4,8 +4,6 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 
 import { Tracker } from "@/components/tracker";
 
-import "./globals.css";
-
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app.metadata");
 
