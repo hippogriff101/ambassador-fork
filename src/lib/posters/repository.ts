@@ -244,6 +244,9 @@ export async function updatePosterProofAndVerification(input: {
   proofContentType: string | null;
   proofSizeBytes: number;
   locationDescription?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationAccuracy?: number | null;
   detectedQrCodes: string[];
   verificationStatus: PosterVerificationStatus;
   metadata?: PosterMetadata;
@@ -258,6 +261,9 @@ export async function updatePosterProofAndVerification(input: {
       proof_content_type = ${input.proofContentType},
       proof_size_bytes = ${input.proofSizeBytes},
       location_description = COALESCE(${input.locationDescription ?? null}, location_description),
+      latitude = COALESCE(${input.latitude ?? null}, latitude),
+      longitude = COALESCE(${input.longitude ?? null}, longitude),
+      location_accuracy = COALESCE(${input.locationAccuracy ?? null}, location_accuracy),
       detected_qr_codes = CAST(${JSON.stringify(input.detectedQrCodes)} AS JSONB),
       metadata = CAST(${JSON.stringify(input.metadata ?? {})} AS JSONB),
       verification_status = ${input.verificationStatus},

@@ -1,5 +1,6 @@
 import {
   jsonError,
+  parseProofLocationFromFormData,
   posterErrorResponse,
   requirePosterSession,
   validateImageUpload,
@@ -14,7 +15,6 @@ export async function POST(request: Request, context: RouteContext<"/api/posters
     const { id } = await context.params;
     const formData = await request.formData();
     const file = formData.get("proof");
-    const locationDescription = formData.get("locationDescription");
 
     if (!(file instanceof File)) {
       return jsonError("A proof image is required.");
@@ -25,11 +25,13 @@ export async function POST(request: Request, context: RouteContext<"/api/posters
       return jsonError(fileValidation.message, fileValidation.status);
     }
 
+    const location = parseProofLocationFromFormData(formData);
+
     const result = await submitPosterProof({
       userId: session.sub,
       posterId: id,
       file,
-      locationDescription: typeof locationDescription === "string" ? locationDescription : null,
+      ...location,
     });
 
     return Response.json(result);

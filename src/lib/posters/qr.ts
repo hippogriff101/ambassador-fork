@@ -1,29 +1,8 @@
-import jsQR from "jsqr";
 import QRCode from "qrcode";
-import sharp from "sharp";
 
+import { optionalEnv } from "@/lib/env";
 import { buildPosterReferralUrl } from "@/lib/posters/config";
 import type { PosterRow } from "@/lib/posters/types";
-
-const QR_ROTATIONS = [0, 90, 180, 270] as const;
-
-async function decodeSingleQr(buffer: Buffer) {
-  const { data, info } = await sharp(buffer)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
-  const code = jsQR(
-    new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
-    info.width,
-    info.height,
-    {
-      inversionAttempts: "attemptBoth",
-    },
-  );
-
-  return code?.data ?? null;
-}
 
 export async function generateQrCodePng(content: string, size: number) {
   return QRCode.toBuffer(content, {
@@ -38,19 +17,51 @@ export async function generateQrCodePng(content: string, size: number) {
   });
 }
 
-export async function readQrCodesFromImageBuffer(buffer: Buffer) {
-  const matches = new Set<string>();
+function getQreaderBaseUrl() {
+  const url = optionalEnv("QREADER_URL");
+  if (!url) {
+    throw new Error("QREADER_URL is not set. Start the qreader microservice (see docker-compose.yml).");
+  }
+  return url.replace(/\/+$/, "");
+}
 
-  for (const angle of QR_ROTATIONS) {
-    const rotated = angle === 0 ? buffer : await sharp(buffer).rotate(angle).toBuffer();
-    const result = await decodeSingleQr(rotated);
+type QreaderResponse = {
+  results?: string[];
+  count?: number;
+  error?: string;
+};
 
-    if (result) {
-      matches.add(result);
-    }
+export async function readQrCodesFromImageBuffer(
+  buffer: Buffer,
+  options: { filename?: string; contentType?: string } = {},
+): Promise<string[]> {
+  const base = getQreaderBaseUrl();
+  const adminKey = optionalEnv("QREADER_ADMIN_KEY");
+
+  const form = new FormData();
+  const blob = new Blob([new Uint8Array(buffer)], {
+    type: options.contentType || "application/octet-stream",
+  });
+  form.append("file", blob, options.filename || "proof");
+
+  const headers: Record<string, string> = {};
+  if (adminKey) {
+    headers["x-admin-key"] = adminKey;
   }
 
-  return [...matches];
+  const response = await fetch(`${base}/read`, {
+    method: "POST",
+    body: form,
+    headers,
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as QreaderResponse;
+
+  if (!response.ok) {
+    throw new Error(payload.error || `qreader responded with ${response.status}`);
+  }
+
+  return Array.isArray(payload.results) ? payload.results.filter(Boolean) : [];
 }
 
 export function normalizeQrValue(value: string) {

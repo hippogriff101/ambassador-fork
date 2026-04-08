@@ -59,6 +59,9 @@ async function persistPosterDecision(input: {
   detectedQrCodes: string[];
   verificationStatus: PosterRow["verification_status"];
   locationDescription?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationAccuracy?: number | null;
   metadata?: Record<string, unknown>;
 }) {
   const stored = await savePosterProofFile(input.poster.id, input.file);
@@ -66,11 +69,14 @@ async function persistPosterDecision(input: {
   try {
     return await updatePosterProofAndVerification({
       posterId: input.poster.id,
-      proofPath: stored.relativePath,
+      proofPath: stored.key,
       proofOriginalName: input.file.name || null,
       proofContentType: input.file.type || null,
       proofSizeBytes: stored.size,
       locationDescription: input.locationDescription,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
+      locationAccuracy: input.locationAccuracy ?? null,
       detectedQrCodes: input.detectedQrCodes,
       verificationStatus: input.verificationStatus,
       metadata: getProofUploadMetadata(input.detectedQrCodes, input.metadata),
@@ -78,7 +84,7 @@ async function persistPosterDecision(input: {
       verifiedAt: input.verificationStatus === "success",
     });
   } catch (error) {
-    await deletePosterProofFile(stored.relativePath);
+    await deletePosterProofFile(stored.key);
     throw error;
   }
 }
@@ -198,6 +204,15 @@ export async function getPosterGroupPdfForUser(userId: string, groupId: string) 
 
 export async function submitPosterProof(input: SubmitPosterProofInput): Promise<ScanMatchResult> {
   const poster = await getPosterForUserOrThrow(input.userId, input.posterId);
+
+  if (!input.locationDescription || !input.locationDescription.trim()) {
+    throw new PosterRequestError("Location description is required.", 400);
+  }
+
+  if (!Number.isFinite(input.latitude) || !Number.isFinite(input.longitude)) {
+    throw new PosterRequestError("Precise location is required to submit proof.", 400);
+  }
+
   const detectedQrCodes = await detectQrCodes(input.file);
 
   const currentPosterMatches = findMatchingPoster(detectedQrCodes, [poster]);
@@ -218,6 +233,9 @@ export async function submitPosterProof(input: SubmitPosterProofInput): Promise<
       detectedQrCodes,
       verificationStatus: "success",
       locationDescription: input.locationDescription,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      locationAccuracy: input.locationAccuracy ?? null,
       metadata: {
         auto_verified: true,
         expected_url: getPosterReferralUrl(poster),
@@ -242,6 +260,9 @@ export async function submitPosterProof(input: SubmitPosterProofInput): Promise<
       detectedQrCodes,
       verificationStatus: "success",
       locationDescription: input.locationDescription,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      locationAccuracy: input.locationAccuracy ?? null,
       metadata: {
         auto_verified: true,
         auto_matched_from_poster_id: poster.id,
@@ -270,6 +291,9 @@ export async function submitPosterProof(input: SubmitPosterProofInput): Promise<
     detectedQrCodes,
     verificationStatus: "in_review",
     locationDescription: input.locationDescription,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    locationAccuracy: input.locationAccuracy ?? null,
     metadata: {
       auto_verification_result: detectedQrCodes.length === 0 ? "qr_not_found" : "no_match",
       expected_url: buildPosterReferralUrl(poster.referral_code),
@@ -291,7 +315,10 @@ export async function scanPosterGroupProof(input: {
   userId: string;
   groupId: string;
   file: File;
-  locationDescription?: string | null;
+  locationDescription: string;
+  latitude: number;
+  longitude: number;
+  locationAccuracy?: number | null;
 }): Promise<ScanMatchResult> {
   const { posters } = await getPosterGroupForUserOrThrow(input.userId, input.groupId);
   const pendingGroupPosters = posters.filter((poster) => poster.verification_status === "pending");
@@ -312,6 +339,9 @@ export async function scanPosterGroupProof(input: {
       posterId: matchedInGroup.id,
       file: input.file,
       locationDescription: input.locationDescription,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      locationAccuracy: input.locationAccuracy ?? null,
     });
   }
 
@@ -345,6 +375,9 @@ export async function scanPosterGroupProof(input: {
     detectedQrCodes,
     verificationStatus: "in_review",
     locationDescription: input.locationDescription,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    locationAccuracy: input.locationAccuracy ?? null,
     metadata: {
       auto_verification_result: "group_no_match",
       expected_url: buildPosterReferralUrl(fallbackPoster.referral_code),
@@ -362,7 +395,10 @@ export async function scanPosterGroupProof(input: {
 export async function scanAnyUserPoster(input: {
   userId: string;
   file: File;
-  locationDescription?: string | null;
+  locationDescription: string;
+  latitude: number;
+  longitude: number;
+  locationAccuracy?: number | null;
 }): Promise<ScanMatchResult> {
   const posters = await getUserPendingPosters(input.userId);
   const detectedQrCodes = await detectQrCodes(input.file);
@@ -389,6 +425,9 @@ export async function scanAnyUserPoster(input: {
     posterId: matchedPoster.id,
     file: input.file,
     locationDescription: input.locationDescription,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    locationAccuracy: input.locationAccuracy ?? null,
   });
 }
 

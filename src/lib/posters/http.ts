@@ -1,4 +1,6 @@
 import { getRequestIp } from "@/lib/http";
+import sql from "@/lib/db";
+import { ensureSchema } from "@/lib/ensure-schema";
 import { getSession } from "@/lib/session";
 
 export { getRequestIp };
@@ -19,6 +21,22 @@ export async function requirePosterSession() {
 
   if (!session) {
     throw new PosterRequestError("Unauthorized", 401);
+  }
+
+  await ensureSchema();
+  const [user] = await sql<{ posters_enabled: boolean | null }[]>`
+    SELECT posters_enabled
+    FROM users
+    WHERE id = ${session.sub}
+    LIMIT 1
+  `;
+
+  if (!user) {
+    throw new PosterRequestError("Unauthorized", 401);
+  }
+
+  if (!user.posters_enabled) {
+    throw new PosterRequestError("Coming soon!", 403);
   }
 
   return session;
@@ -42,6 +60,46 @@ export function posterErrorResponse(
   }
 
   return jsonError(fallbackMessage, fallbackStatus);
+}
+
+export type ParsedProofLocation = {
+  locationDescription: string;
+  latitude: number;
+  longitude: number;
+  locationAccuracy: number | null;
+};
+
+function parseFiniteNumber(raw: FormDataEntryValue | null) {
+  if (typeof raw !== "string" || raw.trim() === "") return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+export function parseProofLocationFromFormData(formData: FormData): ParsedProofLocation {
+  const rawDescription = formData.get("locationDescription");
+  const locationDescription = typeof rawDescription === "string" ? rawDescription.trim() : "";
+  if (!locationDescription) {
+    throw new PosterRequestError("Location description is required.", 400);
+  }
+
+  const latitude = parseFiniteNumber(formData.get("latitude"));
+  const longitude = parseFiniteNumber(formData.get("longitude"));
+  if (latitude === null || longitude === null) {
+    throw new PosterRequestError("Precise location is required. Please allow location access.", 400);
+  }
+
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    throw new PosterRequestError("Received invalid coordinates.", 400);
+  }
+
+  const locationAccuracy = parseFiniteNumber(formData.get("locationAccuracy"));
+
+  return {
+    locationDescription,
+    latitude,
+    longitude,
+    locationAccuracy,
+  };
 }
 
 export function validateImageUpload(file: File) {

@@ -41,6 +41,9 @@ export type PosterRow = {
   verified_at: Date | null;
   rejection_reason: string | null;
   location_description: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_accuracy: number | null;
   proof_path: string | null;
   proof_original_name: string | null;
   proof_content_type: string | null;
@@ -101,7 +104,10 @@ export type SubmitPosterProofInput = {
   userId: string;
   posterId: string;
   file: File;
-  locationDescription?: string | null;
+  locationDescription: string;
+  latitude: number;
+  longitude: number;
+  locationAccuracy?: number | null;
 };
 
 export type ScanMatchResult =

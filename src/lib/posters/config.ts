@@ -141,6 +141,56 @@ export function buildPosterReferralUrl(referralCode: string) {
   return `${getPosterPublicBaseUrl()}/p/${encodeURIComponent(referralCode)}`;
 }
 
+export type PosterCampaignSummary = {
+  slug: string;
+  displayName: string;
+  styles: PosterStyle[];
+};
+
+const AVAILABLE_STYLES: PosterStyle[] = ["color", "bw", "printer_efficient"];
+
+export function listPosterCampaigns(): PosterCampaignSummary[] {
+  const seen = new Map<string, PosterCampaignSummary>();
+
+  for (const root of posterTemplateRoots()) {
+    let entries: string[];
+    try {
+      entries = fs.readdirSync(root);
+    } catch {
+      continue;
+    }
+
+    for (const slug of entries) {
+      if (seen.has(slug)) continue;
+      const campaignDir = path.join(root, slug);
+      let stat: fs.Stats;
+      try {
+        stat = fs.statSync(campaignDir);
+      } catch {
+        continue;
+      }
+      if (!stat.isDirectory()) continue;
+
+      const config = readPosterCampaignConfig(slug);
+      const styles = AVAILABLE_STYLES.filter((style) => {
+        const filename = config.templates?.[style] ?? defaultTemplateFilenames[style];
+        return fs.existsSync(path.join(campaignDir, filename));
+      });
+
+      if (styles.length === 0) continue;
+
+      const displayName =
+        typeof (config as { displayName?: string }).displayName === "string"
+          ? ((config as { displayName?: string }).displayName as string)
+          : slug.charAt(0).toUpperCase() + slug.slice(1);
+
+      seen.set(slug, { slug, displayName, styles });
+    }
+  }
+
+  return [...seen.values()].sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
 export function buildPosterRedirectUrl(referralCode: string, campaignSlug: string) {
   const config = readPosterCampaignConfig(normalizeCampaignSlug(campaignSlug));
   const target = new URL(
