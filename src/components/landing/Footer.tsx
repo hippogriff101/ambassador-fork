@@ -4,6 +4,7 @@ import hcRounded from "@/assets/landing/hc-rounded.svg";
 
 import Sep from "./Sep";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 export default function Footer() {
   const t = useTranslations("landing");
@@ -20,12 +21,12 @@ export default function Footer() {
       />
       <div className="text-center p-12 pt-16">
         <h2 className="text-5xl font-jersey">{t("footer.cta")}</h2>
-        <button
-          type="button"
-          className="mt-6 h-36 px-20 rounded-full hover:bg-rose-700 transition hover:scale-105 bg-primary corner-squircle"
+        <Link
+          href="/apply"
+          className="mt-6 flex items-center max-w-fit h-36 px-20 rounded-full hover:bg-rose-700 transition hover:scale-105 bg-primary corner-squircle"
         >
           <span className="font-jersey text-7xl uppercase">{t("apply")}</span>
-        </button>
+        </Link>
         <p className="mt-6 italic text-neutral-400">{t("footer.cta-sub")}</p>
       </div>
       <div className="px-12 pb-6 flex items-center">

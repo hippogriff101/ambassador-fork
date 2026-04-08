@@ -17,6 +17,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  redirects() {
+    return [
+      {
+        source: "/apply",
+        destination: "https://forms.hackclub.com/t/f9JVqAtU5bus",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

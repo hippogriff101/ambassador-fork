@@ -9,6 +9,7 @@ import highlight from "@/assets/landing/highlight.svg";
 import flagHoldingText from "@/assets/landing/flagholdingtext.png";
 
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 export default function Hero() {
   const t = useTranslations("landing");
@@ -61,12 +62,12 @@ export default function Hero() {
           </span>
         </h1>
 
-        <button
-          type="button"
-          className="mt-6 corner-squircle rounded-full hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-14 px-5 flex items-center"
+        <Link
+          href="/apply"
+          className="mt-6 max-w-fit corner-squircle rounded-full hover:scale-105 transition hover:bg-rose-700 bg-primary text-white h-14 px-5 flex items-center"
         >
           <span className="font-jersey text-3xl uppercase">{t("apply")}</span>
-        </button>
+        </Link>
         <p className="mt-4 text-neutral-600 text-sm">
           {t("apply-sub", { daysLeft: 14 })}
         </p>
