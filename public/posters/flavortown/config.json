@@ -1,0 +1,16 @@
+{
+  "displayName": "Flavortown",
+  "redirectBaseUrl": "https://flavortown.hackclub.com",
+  "templates": {
+    "color": "poster-color.pdf",
+    "bw": "poster-bw.pdf"
+  },
+  "qrCoordinates": {
+    "color": { "x": 847, "y": 119, "size": 258 },
+    "bw": { "x": 530, "y": 122, "size": 218 }
+  },
+  "referralTextCoordinates": {
+    "color": { "x": 595, "y": 62, "size": 18, "color": "FFFFFF" },
+    "bw": { "x": 595, "y": 62, "size": 18, "color": "000000" }
+  }
+}

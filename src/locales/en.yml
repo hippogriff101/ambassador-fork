@@ -59,6 +59,73 @@ dashboard:
 
 posters:
   heading: Posters
+  subheading: Print, post, and prove.
+  campaign:
+    label: Campaign
+    placeholder: Pick a campaign
+    empty: No campaigns available yet.
+  styles:
+    color: Full colour
+    bw: Black & white
+    printer_efficient: Printer-friendly
+  actions:
+    create-poster: New poster
+    create-group: New group
+    download: Download
+    verify: Verify in the wild
+    verify-group: Verify group
+    cancel: Cancel
+    submit: Submit proof
+    submitting: Submitting...
+    use-camera: Take a photo
+    choose-file: Upload from device
+    retake: Retake
+    refresh-location: Refresh location
+  groups:
+    title: Poster groups
+    empty: No groups yet. Create one to bundle multiple posters.
+    count: "{count, plural, one {# poster} other {# posters}}"
+    unnamed: Untitled group
+    name-placeholder: Group name (optional)
+    size-label: How many posters?
+  singles:
+    title: Standalone posters
+    empty: No standalone posters yet.
+  poster-card:
+    referral: "Ref {code}"
+  status:
+    pending: Pending
+    in_review: In review
+    success: Verified
+    rejected: Rejected
+    digital: Digital
+  verify-modal:
+    title: Verify this poster
+    description: Put the poster up, snap a photo showing the QR code clearly, and pin your location.
+    location-description-label: Location description
+    location-description-placeholder: e.g. Cafeteria notice board at Lincoln High
+    coordinates: "Coordinates: {lat}, {lng}"
+    accuracy: "Accuracy: ±{meters}m"
+    location-pending: Waiting for precise location...
+    location-error: We could not get your location. Please allow precise location access and try again.
+    location-retry: Try again
+    image-required: A photo of the poster is required.
+    auto-detect: We will auto-match the QR code to one of your pending posters.
+  results:
+    success: Poster verified automatically.
+    auto_matched: We matched this photo to a different pending poster of yours and verified it.
+    already_verified: This poster has already been verified.
+    in_review: Sent to review — a human will check it soon.
+    no_qr: We could not read a QR code. Try again with a clearer photo.
+    no_match: The QR code did not match any of your pending posters.
+    wrong_group: That QR belongs to a different group or poster.
+  errors:
+    create-failed: Could not create poster.
+    load-failed: Could not load your posters.
+    download-failed: Download failed.
+    upload-failed: Submission failed.
+    geolocation-unavailable: Your browser does not support geolocation.
+    geolocation-denied: Precise location access was denied. Please enable it in your browser settings.
 
 settings:
   heading: Settings
