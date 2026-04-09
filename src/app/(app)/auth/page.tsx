@@ -8,6 +8,12 @@ import { Input } from "@/components/ui/input";
 import { getTranslatedPageMetadata } from "@/i18n/metadata";
 import { getSession } from "@/lib/session";
 
+import logoCentered from "@/assets/app/logo-centered.png";
+import hackClub from "@/assets/landing/hc-rounded.svg";
+import orphHappy from "@/assets/landing/emotes/orph-happy.png";
+
+import { ArrowRightIcon } from "lucide-react";
+
 export async function generateMetadata(): Promise<Metadata> {
   return getTranslatedPageMetadata("app.login.metadata.title");
 }
@@ -19,48 +25,50 @@ export default async function LoginPage() {
   const t = await getTranslations();
 
   return (
-    <main className="page-shell flex items-center justify-center px-6">
-      <div className="flex w-full max-w-sm flex-col">
+    <main className="page-shell flex flex-col items-center justify-center px-6">
+      <Image
+        src={logoCentered}
+        alt="Hack Club Ambassadors"
+        className="h-16 w-auto mb-4"
+      />
+      <div className="flex w-full max-w-md bg-white border border-neutral-300 p-8 flex-col">
         <div className="flex items-center gap-3">
-          <h1 className="text-4xl font-bold text-white">{t("app.login.title")}</h1>
+          <h1 className="text-3xl font-bold text-white">
+            {t("app.login.title")}
+          </h1>
           <Image
-            src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f44b/emoji.svg"
-            alt={t("app.login.waving-hand-alt")}
-            width={40}
-            height={40}
-            className="h-10 w-10"
+            src={orphHappy}
+            alt=""
+            width={48}
+            height={48}
+            className="size-12 -my-2"
           />
         </div>
-        <p className="mt-1 text-lg leading-tight text-white">
-          <strong>{t("app.login.login")}</strong>{" "}
-          <span className="font-normal">{t("app.login.or")}</span>{" "}
-          <strong>{t("app.login.sign-up")}</strong>?
-        </p>
+        <p className="mt-1 text-neutral-600">{t("app.login.desc")}</p>
 
-        <div className="mt-5 flex h-14 w-full items-stretch overflow-hidden rounded-lg bg-card">
-          <div className="flex shrink-0 items-center pl-4 pr-2 text-white">
-            <Icon glyph="person" size={20} fill="currentColor" />
+        <div className="mt-4 flex gap-3">
+          <div className="relative h-12 w-full rounded-sm bg-card">
+            <Icon
+              glyph="email"
+              fill="currentColor"
+              className="absolute size-5 top-3.5 left-3 pointer-events-none"
+            />
+            <Input
+              type="email"
+              placeholder={t("app.login.email-placeholder")}
+              className="h-full rounded-none border-0 bg-transparent pl-10 py-0 text-base text-white shadow-none placeholder:text-foreground focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
+            />
           </div>
-          <Input
-            type="email"
-            placeholder={t("app.login.email-placeholder")}
-            className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-base text-white shadow-none placeholder:text-foreground focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
-          />
-          <button className="flex w-14 shrink-0 cursor-pointer items-center justify-center bg-primary text-white">
-            <span className="text-4xl font-bold leading-none">&rsaquo;</span>
+          <button className="flex size-12 flex-none rounded-sm cursor-pointer items-center justify-center bg-primary text-white">
+            <ArrowRightIcon className="size-5" strokeWidth={2.5} />
+            <span className="sr-only">Next</span>
           </button>
         </div>
-
-        <p className="mt-3 text-sm text-right">
-          <span className="text-white">{t("app.login.alt-login-prefix")}</span>{" "}
-          <a
-            href="/api/auth/login"
-            className="!text-primary !underline hover:!opacity-80"
-          >
-            {t("app.login.alt-login-link")}
-          </a>
-        </p>
       </div>
+      <button className="mt-4 w-full max-w-md h-12 text-white gap-3 flex items-center justify-center bg-primary">
+        <Image src={hackClub} alt="" className="size-6 w-auto drop-shadow-sm" />
+        <span className="font-bold">{t("app.login.alt-login-link")}</span>
+      </button>
     </main>
   );
 }

@@ -9,14 +9,15 @@ app:
   login:
     metadata:
       title: Login
-    title: Welcome!
+    title: Nice to see you
+    desc: Log in or sign up below.
     login: Login
     or: or
     sign-up: Sign Up
     waving-hand-alt: Waving hand
     email-placeholder: Email
     alt-login-prefix: Or..
-    alt-login-link: sign in with Hack Club
+    alt-login-link: Sign in with Hack Club
   navbar:
     logo-alt: Ambassador
     admin-link: Admin
