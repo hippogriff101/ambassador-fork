@@ -63,7 +63,7 @@ export default function Questions() {
       </div>
       <p className="mt-6 text-2xl md:text-3xl leading-relaxed">
         If your question isn&rsquo;t answered here, you can always ask in{" "}
-        <strong>#ambassadors-program</strong> or email us,{" "}
+        <strong>#ambassador</strong> or email us,{" "}
         <strong>ambassadors@hackclub.com</strong>.
       </p>
     </div>
