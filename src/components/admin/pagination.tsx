@@ -5,9 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 const btnClass =
   "inline-flex h-10 items-center justify-center !rounded-none [border-radius:0!important] border border-white/10 bg-muted px-4 font-body text-sm text-white transition-colors hover:bg-muted/80";
-const btnDisabledClass =
-  "inline-flex h-10 items-center justify-center !rounded-none [border-radius:0!important] border border-white/10 bg-muted px-4 font-body text-sm text-white/30 pointer-events-none";
-
 export function Pagination({
   totalCount,
   pageSize,
@@ -45,16 +42,12 @@ export function Pagination({
           <Link href={buildHref(currentPage - 1)} className={btnClass}>
             {labels.previous}
           </Link>
-        ) : (
-          <span className={btnDisabledClass}>{labels.previous}</span>
-        )}
+        ) : null}
         {currentPage < totalPages ? (
           <Link href={buildHref(currentPage + 1)} className={btnClass}>
             {labels.next}
           </Link>
-        ) : (
-          <span className={btnDisabledClass}>{labels.next}</span>
-        )}
+        ) : null}
       </div>
     </div>
   );

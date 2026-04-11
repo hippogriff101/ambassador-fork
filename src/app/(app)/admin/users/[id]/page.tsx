@@ -87,7 +87,7 @@ export default async function AdminUserDetailPage({
     : [];
   const addresses = (liveAddresses.length > 0 ? liveAddresses : storedAddresses) as HackClubAddress[];
 
-  const [latestApplication, applications, visitCountResult, visits, orders] = await Promise.all([
+  const [latestApplication, applications, visitCountResult, visits, orders, noteHistory] = await Promise.all([
     sql`
       SELECT id, status, name, date_of_birth, decision_note, created_at, updated_at
       FROM applications
@@ -121,7 +121,20 @@ export default async function AdminUserDetailPage({
       ORDER BY created_at DESC
       LIMIT 10
     `,
+    sql`
+      SELECT une.id, une.note, une.created_at, une.created_by,
+             actor.display_name AS actor_display_name, actor.email AS actor_email
+      FROM user_note_events une
+      LEFT JOIN users actor ON actor.id = une.created_by
+      WHERE une.user_id = ${user.id}
+      ORDER BY une.created_at DESC, une.id DESC
+      LIMIT 20
+    `,
   ]);
+  const currentUserNote =
+    typeof noteHistory[0]?.note === "string" && noteHistory[0].note.trim().length > 0
+      ? noteHistory[0].note
+      : null;
 
   const totalVisitPages = Math.max(1, Math.ceil(visitCountResult / 3));
   const currentVisitPage = Math.min(visitsPage, totalVisitPages);
@@ -389,6 +402,62 @@ export default async function AdminUserDetailPage({
             {t("admin.user-detail.actions.save-flags")}
           </button>
         </form>
+      </DetailSection>
+
+      <DetailSection
+        title={t("admin.user-detail.sections.notes.title")}
+        description={t("admin.user-detail.sections.notes.description")}
+      >
+        <DetailFieldRow
+          label={t("admin.user-detail.notes.current-note")}
+          value={currentUserNote}
+          multiline
+        />
+
+        <form action={`/api/admin/users/${user.id}/note`} method="POST" className="max-w-xl space-y-3">
+          <input type="hidden" name="redirectTo" value={`/admin/users/${user.id}`} />
+          <label className="block text-sm text-secondary">
+            {t("admin.user-detail.notes.note-label")}
+            <Textarea
+              name="note"
+              rows={5}
+              defaultValue={currentUserNote ?? ""}
+              className="ui-input-surface mt-2 min-h-24 resize-none border-white bg-transparent px-5 py-4 font-body text-base font-normal placeholder:font-normal hover:bg-transparent md:text-base"
+              placeholder={t("admin.user-detail.notes.note-placeholder")}
+            />
+          </label>
+          <button className={buttonVariants({ size: "app" })}>
+            {t("admin.user-detail.actions.save-note")}
+          </button>
+        </form>
+
+        <div className="space-y-4">
+          <h3 className="font-body text-sm text-secondary">
+            {t("admin.user-detail.notes.history-title")}
+          </h3>
+          {noteHistory.length > 0 ? (
+            noteHistory.map((entry) => (
+              <div key={entry.id} className="border-t border-white/10 pt-4 first:border-t-0 first:pt-0">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-body text-sm text-white">
+                    {entry.actor_display_name ??
+                      entry.actor_email ??
+                      entry.created_by ??
+                      t("admin.user-detail.notes.unknown-actor")}
+                  </span>
+                  <span className="text-xs text-secondary">
+                    {formatDateTime(entry.created_at, locale)}
+                  </span>
+                </div>
+                <div className="mt-2 whitespace-pre-line font-body text-base text-white break-words [overflow-wrap:anywhere]">
+                  {entry.note?.trim() ? entry.note : t("admin.user-detail.notes.cleared")}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="font-body text-base text-white">{t("admin.user-detail.notes.empty")}</p>
+          )}
+        </div>
       </DetailSection>
 
       <DetailSection
