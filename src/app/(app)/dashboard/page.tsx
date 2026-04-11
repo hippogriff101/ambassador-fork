@@ -21,6 +21,7 @@ import { ensureSchema } from "@/lib/database/ensure-schema";
 import { loadUserHackClubAddresses } from "@/lib/hca-addresses";
 import { canAccessPosters } from "@/lib/posters/access";
 import { getSession } from "@/lib/session";
+import { canAccessShirts } from "@/lib/shirt/access";
 import {
   resolveAmbassadorRegion,
   type HackClubAddress,
@@ -135,8 +136,11 @@ export default async function DashboardPage({
   ]);
 
   const shirtEnabled = Boolean(user?.shirt_enabled);
-  const shouldLoadShirtAddresses =
-    shirtEnabled && Boolean(application && isAcceptedApplicationStatus(application.status));
+  const canUseShirts = canAccessShirts({
+    latestApplicationStatus: application?.status ?? null,
+    manualDashboardState: user?.manual_dashboard_state ?? null,
+  });
+  const shouldLoadShirtAddresses = shirtEnabled && canUseShirts;
   let shirtNeedsAddressRefresh = false;
   let shirtAddresses: HackClubAddress[] = [];
 
@@ -177,7 +181,7 @@ export default async function DashboardPage({
   const canAccessAdmin = Boolean(session.impersonator) || Boolean(user?.is_admin ?? session.isAdmin);
   const canUseSelector = canShowDevAdminSelector(canAccessAdmin);
   const fakeDate = new Date().toISOString();
-  const stateInput = { application, user, locale, fakeDate, t, shirt };
+  const stateInput = { application, user, locale, fakeDate, t, shirt, canUseShirts };
   const baseResolved = resolveState({ ...stateInput, activeDevState: null });
   const selectedDevState = devState && isDevState(devState) ? devState : null;
   const resolved = canUseSelector && selectedDevState
@@ -232,6 +236,7 @@ function resolveState({
   fakeDate,
   t,
   shirt,
+  canUseShirts,
 }: {
   activeDevState: DevState | null;
   application: { status: string; created_at: string } | undefined;
@@ -248,6 +253,7 @@ function resolveState({
   fakeDate: string;
   t: DashboardTranslations;
   shirt: ShirtOrderSectionProps;
+  canUseShirts: boolean;
 }): ResolvedState {
   const states = {
     ineligible: {
@@ -273,9 +279,7 @@ function resolveState({
         <ApprovedApplication
           t={t}
           shirt={shirt}
-          canShowShirtSection={Boolean(
-            application && isAcceptedApplicationStatus(application.status),
-          )}
+          canShowShirtSection={canUseShirts}
         />
       ),
       activeStep: "decision",

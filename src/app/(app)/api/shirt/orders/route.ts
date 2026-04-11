@@ -1,9 +1,9 @@
-import { isAcceptedApplicationStatus } from "@/lib/applications/status";
 import sql from "@/lib/database/client";
 import { ensureSchema } from "@/lib/database/ensure-schema";
 import { loadUserHackClubAddresses } from "@/lib/hca-addresses";
 import { isSameOriginRequest } from "@/lib/http";
 import { getSession } from "@/lib/session";
+import { canAccessShirts } from "@/lib/shirt/access";
 import {
   canPlaceAnotherShirtOrder,
   isShirtSize,
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   const size = body.size;
 
   const [user] = await sql`
-    SELECT id, shirt_enabled, hca_addresses, hca_access_token
+    SELECT id, shirt_enabled, hca_addresses, hca_access_token, manual_dashboard_state
     FROM users
     WHERE id = ${session.sub}
   `;
@@ -53,7 +53,10 @@ export async function POST(request: Request) {
     ORDER BY created_at DESC, id DESC
     LIMIT 1
   `;
-  if (!latestApp || !isAcceptedApplicationStatus(latestApp.status)) {
+  if (!canAccessShirts({
+    latestApplicationStatus: latestApp?.status ?? null,
+    manualDashboardState: user.manual_dashboard_state ?? null,
+  })) {
     return Response.json({ error: "not_ambassador" }, { status: 403 });
   }
 
