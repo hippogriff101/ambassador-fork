@@ -2,6 +2,7 @@
 Oooh yeah! Next.js 16 website for the [2026 Stardance ambassador program](https://ambassador.hackclub.com).
 
 # Help me set this up
+The following instructions are for a development environment. It is recommended that you set it up with the `Dockerfile.app` and `Dockerfile.qreader` profiles for production, especially on Coolify, so that you have rolling deploys!
 
 ## Environment variables
 Required:
