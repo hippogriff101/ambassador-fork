@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Pagination } from "@/components/admin/pagination";
 import { SearchBar } from "@/components/admin/search-bar";
 import { SlackAvatar } from "@/components/admin/slack-profile";
+import { WarehouseStats } from "@/components/admin/warehouse-stats";
 import { pillVariants } from "@/components/ui/pill";
 import { getTranslatedPageMetadata } from "@/i18n/metadata";
 import sql from "@/lib/database/client";
@@ -88,8 +89,9 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
+      <header className="space-y-4">
         <h1 className="text-4xl text-white">{t("admin.orders.title")}</h1>
+        <WarehouseStats locale={locale} />
       </header>
       <SearchBar placeholder={t("admin.search-placeholder")} />
       <div className="overflow-x-auto border border-white/10 bg-card p-3 md:p-4">

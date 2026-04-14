@@ -391,6 +391,27 @@ export class WarehouseApiClient {
     return order
   }
 
+  async listOrders(): Promise<WarehouseOrderResponse[]> {
+    const response = await this.request("/api/v1/warehouse_orders", {
+      method: "GET",
+      cache: "no-store",
+    })
+
+    if (typeof response !== "object" || response === null || Array.isArray(response)) {
+      return []
+    }
+
+    const record: Record<string, unknown> = Object.fromEntries(Object.entries(response))
+
+    if (!Array.isArray(record.warehouse_orders)) {
+      return []
+    }
+
+    return (record.warehouse_orders as unknown[])
+      .map(parseWarehouseOrderResponse)
+      .filter((o): o is WarehouseOrderResponse => o !== null)
+  }
+
   async getOrder(orderId: string) {
     const response = await this.request(
       `/api/v1/warehouse_orders/${encodeURIComponent(orderId)}`,

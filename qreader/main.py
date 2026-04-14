@@ -38,6 +38,12 @@ def key_or_ip(request: Request):
     return get_remote_address(request)
 
 
+def get_request_host(request: Request) -> str:
+    forwarded_host = request.headers.get("x-forwarded-host", "")
+    host = forwarded_host.split(",", 1)[0].strip() or request.headers.get("host", "")
+    return host.split(":", 1)[0].lower()
+
+
 app = FastAPI(title="qreader", docs_url=None, redoc_url=None)
 limiter = Limiter(key_func=key_or_ip)
 app.state.limiter = limiter
@@ -45,7 +51,7 @@ app.state.limiter = limiter
 
 @app.middleware("http")
 async def redirect_ambassadors_host(request: Request, call_next):
-    host = request.headers.get("host", "").split(":", 1)[0]
+    host = get_request_host(request)
 
     if host == "ambassadors.hackclub.com" and request.url.path not in ("/read", "/health"):
         destination = f"https://ambassador.hackclub.com{request.url.path}"

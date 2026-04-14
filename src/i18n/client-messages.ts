@@ -1,7 +1,7 @@
 export const clientMessages = {
   app: {
     metadata: {
-      title: "Hack Club Ambassador",
+      title: "Stardance Ambassador",
     },
   },
   "error-pages": {

@@ -159,12 +159,7 @@ export async function POST(
 
     await sql`
       UPDATE orders
-      SET status = ${ORDER_STATUS_FAILED},
-          warehouse_status = 'error',
-          note = NULL,
-          internal_fail_reason = ${message},
-          reviewed_at = NOW(),
-          reviewed_by = ${session.sub},
+      SET internal_fail_reason = ${message},
           updated_at = NOW()
       WHERE id = ${id}
     `;

@@ -2,7 +2,7 @@ import {
   createPosterGroupForUser,
   listPosterDataForUser,
 } from "@/lib/posters/service";
-import { posterErrorResponse, requirePosterSession } from "@/lib/posters/http";
+import { isSameOriginRequest, posterErrorResponse, requirePosterSession } from "@/lib/posters/http";
 
 export const runtime = "nodejs";
 
@@ -17,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) {
+    return Response.json({ error: "forbidden" }, { status: 403 });
+  }
   try {
     const session = await requirePosterSession();
     const body = await request.json();

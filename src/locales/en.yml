@@ -4,7 +4,7 @@ locale:
 
 app:
   metadata:
-    title: Hack Club Ambassador
+    title: Stardance Ambassador
     description: Hack Club Ambassador program
   login:
     metadata:
@@ -350,6 +350,13 @@ admin:
     size: "Size {size}"
     warehouse-link: View on mail.hackclub.com ↗
     view-order: View order
+    warehouse:
+      crunching: Crunching numbers...
+      expenditure-label: Total expenditure (completed)
+      contents: Contents
+      labor: Labor
+      postage: Postage
+      completed-orders: "Based on {count} completed warehouse orders"
     columns:
       user: User
       item: Item

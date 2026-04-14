@@ -200,6 +200,10 @@ a {
     background-color: var(--background) !important;
   }
 
+  .hover\:bg-black:hover {
+    background-color: var(--background) !important;
+  }
+
   .text-white {
     color: var(--foreground) !important;
   }
