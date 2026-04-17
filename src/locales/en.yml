@@ -59,7 +59,7 @@ dashboard:
   no-application:
     eyebrow: Get Started
     title: Apply to be an Ambassador
-    body: "Ready to become a Hack Club Stardance Ambassador? Fill out a quick application and we'll review it."
+    body: "Ready to represent Hack Club's Stardance? Fill out a quick application and we'll review it."
     cta: Apply Now
   pending:
     eyebrow: Under review
@@ -681,7 +681,7 @@ landing:
     title: Ambassador Program
 
   apply: Apply
-  apply-sub: "US, UK, CA, EU, AU only"
+  apply-sub: "US, UK, CA, EU, AU, NZ only"
   log-in: Log in
   dashboard: Dashboard
 

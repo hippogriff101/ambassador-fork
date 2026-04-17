@@ -62,9 +62,9 @@ const questions = [
       <>
         <p>
           Teenagers aged 13-18 from the United States, United Kingdom, Canada,
-          Europe and Australia can apply. You&rsquo;ll need to be able to get to
-          places around your city - this may involve walking, biking, driving,
-          or taking public transit, it&rsquo;s up to you.
+          Europe, Australia, and New Zealand can apply. You&rsquo;ll need to be
+          able to get to places around your city - this may involve walking,
+          biking, driving, or taking public transit, it&rsquo;s up to you.
         </p>
         <p>
           We hope to add more countries in the future, but this is a brand new

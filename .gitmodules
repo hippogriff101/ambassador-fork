@@ -1,0 +1,3 @@
+[submodule "nephthys"]
+	path = nephthys
+	url = https://github.com/hackclub/nephthys

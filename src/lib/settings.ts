@@ -14,6 +14,7 @@ export const SUPPORTED_AMBASSADOR_REGIONS = [
   "Australia",
   "Canada",
   "EU",
+  "New Zealand",
   "United Kingdom",
   "United States",
   "Other",
@@ -25,6 +26,7 @@ type AmbassadorRegionInput = string | null | undefined;
 const REGION_CODES: Array<readonly [string, AmbassadorRegion]> = [
   ["au", "Australia"],
   ["ca", "Canada"],
+  ["nz", "New Zealand"],
   ["gb", "United Kingdom"],
   ["us", "United States"],
 ];
@@ -97,6 +99,7 @@ const REGION_NAMES: Array<readonly [string, AmbassadorRegion]> = [
   ["the netherlands", "EU"],
   ["europe", "EU"],
   ["european union", "EU"],
+  ["new zealand", "New Zealand"],
   ["great britain", "United Kingdom"],
   ["england", "United Kingdom"],
   ["northern ireland", "United Kingdom"],
