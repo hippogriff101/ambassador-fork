@@ -185,7 +185,12 @@ a {
   }
 
   .ui-open-link {
+    appearance: none;
+    background: transparent;
+    border: 0;
     color: var(--foreground) !important;
+    cursor: pointer;
+    padding: 0;
     transition: color 150ms ease, opacity 150ms ease;
   }
 
@@ -305,7 +310,7 @@ a {
   }
 
   :is(
-    button:not([data-slot^="select-"], [data-slot="icon-link"]),
+    button:not([data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
     [data-slot="button"],
     a[data-slot="button"],
     a.inline-flex.rounded-xl
@@ -314,7 +319,7 @@ a {
   }
 
   :is(
-    button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"]),
+    button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
     [data-slot="button"]:not(:disabled),
     a[data-slot="button"],
     a.inline-flex.rounded-xl
@@ -323,7 +328,7 @@ a {
   }
 
   :is(
-    button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"]),
+    button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
     [data-slot="button"]:not(:disabled),
     a[data-slot="button"],
     a.inline-flex.rounded-xl
@@ -335,7 +340,7 @@ a {
   }
 
   :is(
-      button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"]),
+      button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
       [data-slot="button"]:not(:disabled),
       a[data-slot="button"],
       a.inline-flex.rounded-xl

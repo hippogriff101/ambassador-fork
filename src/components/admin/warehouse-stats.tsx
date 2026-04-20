@@ -145,16 +145,13 @@ function ExpenditurePie({
   locale: string;
 }) {
   const nonZero = data.filter((d) => d.value > 0);
-  const chartData =
-    nonZero.length > 0
-      ? nonZero
-      : [{ name: "empty", value: 1, fill: "var(--border)" }];
+  const hasNonZeroData = nonZero.length > 0;
 
   return (
     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
       <PieChart>
         <Pie
-          data={chartData}
+          data={[{ name: "track", value: 1, fill: "var(--border)" }]}
           dataKey="value"
           nameKey="name"
           cx="50%"
@@ -162,18 +159,43 @@ function ExpenditurePie({
           innerRadius={40}
           outerRadius={80}
           strokeWidth={0}
+          isAnimationActive={false}
         >
-          {chartData.map((entry) => (
-            <Cell key={entry.name} fill={entry.fill} />
-          ))}
+          <Cell fill="var(--border)" />
         </Pie>
-        {nonZero.length > 0 ? (
+        {hasNonZeroData ? (
+          <Pie
+            data={nonZero}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            innerRadius={40}
+            outerRadius={80}
+            strokeWidth={0}
+          >
+            {nonZero.map((entry) => (
+              <Cell key={entry.name} fill={entry.fill} />
+            ))}
+          </Pie>
+        ) : null}
+        {hasNonZeroData ? (
           <Tooltip
             content={
               <PieTooltip locale={locale} />
             }
           />
-        ) : null}
+        ) : (
+          <text
+            x="50%"
+            y="50%"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="font-body text-sm fill-current text-white/50"
+          >
+            0
+          </text>
+        )}
       </PieChart>
     </ResponsiveContainer>
   );

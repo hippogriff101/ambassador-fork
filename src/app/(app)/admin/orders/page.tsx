@@ -8,7 +8,6 @@ import { SearchBar } from "@/components/admin/search-bar";
 import { StatusFilter } from "@/components/admin/status-filter";
 import { SlackAvatar } from "@/components/admin/slack-profile";
 import { WarehouseStats } from "@/components/admin/warehouse-stats";
-import { buttonVariants } from "@/components/ui/button";
 import { pillVariants } from "@/components/ui/pill";
 import { getTranslatedPageMetadata } from "@/i18n/metadata";
 import sql from "@/lib/database/client";
@@ -118,11 +117,7 @@ export default async function AdminOrdersPage({
   const totalCount = countResult.at(0)?.total ?? 0;
   const hcbStatus = query.hcb?.trim() ?? "";
   const hcbStatusMessage = hcbStatus === "" ? null : HCB_AUTH_STATUS_MESSAGES.get(hcbStatus) ?? null;
-  const authorizedAccount = [
-    hcbConnection?.authorizedHcbUserName ?? null,
-    hcbConnection?.authorizedHcbUserEmail ?? null,
-  ].filter((value): value is string => value !== null && value.trim() !== "");
-
+  const lastHcbError = hcbConnection?.lastError?.trim() ?? "";
   return (
     <div className="space-y-6">
       <header className="space-y-4">
@@ -133,26 +128,25 @@ export default async function AdminOrdersPage({
             method="POST"
             confirmationMessage="Re-authorize the HCB integration?"
           >
-            <button className={buttonVariants({ size: "app-sm" })}>
-              Re-authorize HCB
+            <button
+              type="submit"
+              data-slot="open-link"
+              className="ui-open-link inline-flex font-body text-lg leading-none"
+            >
+              Re-authorize HCB ↗
             </button>
           </ConfirmSubmitForm>
         </div>
-        <div className="space-y-1">
-          <p className="font-body text-sm text-white">
-            {authorizedAccount.length > 0
-              ? `Authorized HCB account: ${authorizedAccount.join(" · ")}`
-              : "No HCB account is currently authorized."}
-          </p>
-          {hcbConnection?.lastError !== null &&
-          hcbConnection?.lastError !== undefined &&
-          hcbConnection.lastError.trim() !== "" ? (
-            <p className="font-body text-sm text-white">{`Last HCB error: ${hcbConnection.lastError}`}</p>
-          ) : null}
-          {hcbStatusMessage !== null ? (
-            <p className="font-body text-sm text-white">{hcbStatusMessage}</p>
-          ) : null}
-        </div>
+        {lastHcbError !== "" || hcbStatusMessage !== null ? (
+          <div className="space-y-1">
+            {lastHcbError !== "" ? (
+              <p className="font-body text-sm text-white">{`Last HCB error: ${lastHcbError}`}</p>
+            ) : null}
+            {hcbStatusMessage !== null ? (
+              <p className="font-body text-sm text-white">{hcbStatusMessage}</p>
+            ) : null}
+          </div>
+        ) : null}
         <WarehouseStats locale={locale} />
       </header>
       <div className="flex flex-wrap items-center gap-3">

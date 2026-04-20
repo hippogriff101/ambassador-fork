@@ -61,7 +61,6 @@ type AdminDashboardChartsProps = {
     decisionSplitTitle: string;
     applicationFlowEyebrow: string;
     applicationFlowTitle: string;
-    noFlowData: string;
     stillPending: string;
     visitsSeries: string;
     signupsSeries: string;
@@ -85,7 +84,6 @@ export function AdminDashboardCharts({
   const stageMetrics = buildStageMetrics(applicationFunnelData);
   const outcomeMetrics = buildOutcomeMetrics(funnelData, pendingCount, messages.stillPending);
   const flowChartData = [...stageMetrics, ...outcomeMetrics];
-  const hasApplicationFlowData = flowChartData.some((step) => step.value > 0);
 
   return (
     <section className="overflow-hidden bg-card">
@@ -215,40 +213,35 @@ export function AdminDashboardCharts({
         <div className="min-w-0">
           <h2 className="mb-6 text-2xl text-white">{messages.applicationFlowTitle}</h2>
           <div className="h-[24rem] min-w-0">
-            {hasApplicationFlowData ? (
-              <DashboardResponsiveChart height={384}>
-                <BarChart
-                  data={flowChartData}
-                  layout="vertical"
-                  margin={{ top: 8, right: 16, left: 12, bottom: 8 }}
-                >
-                  <XAxis
-                    type="number"
-                    tick={{ fill: "var(--foreground)", fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fill: "var(--foreground)", fontSize: 13 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={136}
-                  />
-                  <Tooltip cursor={false} content={<ChartTooltip locale={locale} />} />
-                  <Bar dataKey="value" radius={[0, 10, 10, 0]}>
-                    {flowChartData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </DashboardResponsiveChart>
-            ) : (
-              <div className="flex h-full items-center justify-center font-body text-base text-white">
-                {messages.noFlowData}
-              </div>
-            )}
+            <DashboardResponsiveChart height={384}>
+              <BarChart
+                data={flowChartData}
+                layout="vertical"
+                margin={{ top: 8, right: 16, left: 12, bottom: 8 }}
+              >
+                <XAxis
+                  type="number"
+                  tick={{ fill: "var(--foreground)", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={[0, getBarChartAxisMax(flowChartData)]}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fill: "var(--foreground)", fontSize: 13 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={136}
+                />
+                <Tooltip cursor={false} content={<ChartTooltip locale={locale} />} />
+                <Bar dataKey="value" radius={[0, 10, 10, 0]}>
+                  {flowChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </DashboardResponsiveChart>
           </div>
         </div>
       </div>
@@ -391,4 +384,8 @@ function clampToParent(value: number, max: number) {
   if (max <= 0) return 0;
 
   return Math.min(value, max);
+}
+
+function getBarChartAxisMax(data: Array<{ value: number }>) {
+  return Math.max(1, ...data.map((entry) => Math.max(entry.value, 0)));
 }

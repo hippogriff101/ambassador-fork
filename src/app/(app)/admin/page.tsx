@@ -301,7 +301,6 @@ export default async function AdminDashboard({
           decisionSplitTitle: t("admin.overview.charts.decision-split-title"),
           applicationFlowEyebrow: t("admin.overview.charts.application-flow-eyebrow"),
           applicationFlowTitle: t("admin.overview.charts.application-flow-title"),
-          noFlowData: t("admin.overview.charts.no-flow-data"),
           stillPending: t("admin.overview.charts.still-pending"),
           visitsSeries: t("admin.overview.charts.series.visits"),
           signupsSeries: t("admin.overview.charts.series.signups"),
