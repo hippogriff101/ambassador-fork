@@ -140,11 +140,11 @@ export default async function DashboardPage({
         applicationAirtableRecordId: application?.airtable_record_id ?? null,
         applicationAirtablePayload: application?.airtable_payload ?? null,
       })
-    : { hasAmbassadorRecord: false, onboardingComplete: false };
+    : { hasAmbassadorRecord: false, status: "Unsubmitted" as const, isOnboardingComplete: false };
   const shirtRequiresOnboarding =
     canUseShirts &&
     (!shirtOnboardingStatus.hasAmbassadorRecord ||
-      !shirtOnboardingStatus.onboardingComplete);
+      !shirtOnboardingStatus.isOnboardingComplete);
   const shouldLoadShirtAddresses = canUseShirts && !shirtRequiresOnboarding;
   let shirtNeedsAddressRefresh = false;
   let shirtAddresses: HackClubAddress[] = [];

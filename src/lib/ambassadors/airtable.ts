@@ -52,7 +52,8 @@ async function getRecordById(
 
 export type AmbassadorOnboardingStatus = {
   hasAmbassadorRecord: boolean;
-  onboardingComplete: boolean;
+  status: "Unsubmitted" | "Submitted" | "Pending Signature" | "Completed";
+  isOnboardingComplete: boolean;
 };
 
 function getAmbassadorRecordIdsFromApplicationPayload(payload: unknown) {
@@ -120,7 +121,8 @@ export async function getAmbassadorOnboardingStatus(input: {
   if (!client) {
     return {
       hasAmbassadorRecord: cachedAmbassadorRecordIds.length > 0,
-      onboardingComplete: false,
+      status: "Unsubmitted",
+      isOnboardingComplete: false,
     };
   }
 
@@ -133,7 +135,8 @@ export async function getAmbassadorOnboardingStatus(input: {
   if (ambassadorRecordIds.length === 0) {
     return {
       hasAmbassadorRecord: false,
-      onboardingComplete: false,
+      status: "Unsubmitted",
+      isOnboardingComplete: false,
     };
   }
 
@@ -159,17 +162,38 @@ export async function getAmbassadorOnboardingStatus(input: {
   if (ambassadorRecords.length === 0) {
     return {
       hasAmbassadorRecord: true,
-      onboardingComplete: false,
+      status: "Unsubmitted",
+      isOnboardingComplete: false,
     };
   }
 
-  const onboardingComplete = ambassadorRecords.some((record) => {
-    return Boolean(getAirtableAmbassadorFieldValue(record.fields, "onboardingComplete"));
-  });
+  let status: AmbassadorOnboardingStatus["status"] = "Unsubmitted";
+
+  for (const record of ambassadorRecords) {
+    const value = getAirtableAmbassadorFieldValue(record.fields, "onboardingStatus");
+    const statuses =
+      typeof value === "string"
+        ? [value]
+        : Array.isArray(value)
+          ? value.filter((item): item is string => typeof item === "string")
+          : [];
+
+    if (statuses.includes("Completed")) {
+      status = "Completed";
+      break;
+    }
+
+    if (statuses.includes("Pending Signature")) {
+      status = "Pending Signature";
+    } else if (status === "Unsubmitted" && statuses.includes("Submitted")) {
+      status = "Submitted";
+    }
+  }
 
   return {
     hasAmbassadorRecord: true,
-    onboardingComplete,
+    status,
+    isOnboardingComplete: status === "Completed",
   };
 }
 

@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { Pagination } from "@/components/admin/pagination";
 import { SearchBar } from "@/components/admin/search-bar";
+import { SortToggle } from "@/components/admin/sort-toggle";
 import { StatusFilter } from "@/components/admin/status-filter";
 import { SlackAvatar } from "@/components/admin/slack-profile";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -56,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AdminApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; status?: string; sort?: string }>;
 }) {
   const [t, locale, query] = await Promise.all([getTranslations(), getLocale(), searchParams]);
   await ensureSchema();
@@ -67,6 +68,7 @@ export default async function AdminApplicationsPage({
   const searchFilter = search ? `%${search}%` : null;
   const statusFilter = query.status?.trim() ?? "";
   const filterByStatus = statusFilter !== "" ? statusFilter : null;
+  const sortOrder = query.sort === "newest" ? "DESC" : "ASC";
 
   const [applications, countResult] = await Promise.all([
     sql<ApplicationListRow[]>`
@@ -97,7 +99,7 @@ export default async function AdminApplicationsPage({
       AND (
         ${filterByStatus}::text IS NULL OR a.status = ${filterByStatus}
       )
-      ORDER BY a.created_at DESC
+      ORDER BY a.created_at ${sortOrder === "ASC" ? sql`ASC` : sql`DESC`}
       LIMIT ${20} OFFSET ${offset}
     `,
     sql<CountRow[]>`
@@ -123,21 +125,30 @@ export default async function AdminApplicationsPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-4xl text-white">{t("admin.applications-list.title")}</h1>
+        <Link
+          href="/admin/applications/review"
+          className="ui-open-link inline-flex items-center gap-1 whitespace-nowrap font-body text-lg leading-none"
+        >
+          Review Mode <span aria-hidden="true">↗</span>
+        </Link>
       </header>
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full max-w-sm">
-          <SearchBar placeholder={t("admin.search-placeholder")} />
+          <SearchBar placeholder={t("admin.search-placeholder")} strongPlaceholder />
         </div>
-        <div className="w-full sm:ml-auto sm:w-auto">
-          <StatusFilter
-            placeholder={t("admin.status-filter.all")}
-            options={APPLICATION_STATUS_FILTER_OPTIONS.map((option) => ({
-              value: option.value,
-              label: t(option.labelKey),
-            }))}
-          />
+        <div className="flex w-full min-w-0 items-center gap-2 sm:ml-auto sm:w-auto">
+          <div className="min-w-0 flex-1 sm:flex-none">
+            <StatusFilter
+              placeholder={t("admin.status-filter.all")}
+              options={APPLICATION_STATUS_FILTER_OPTIONS.map((option) => ({
+                value: option.value,
+                label: t(option.labelKey),
+              }))}
+            />
+          </div>
+          <SortToggle />
         </div>
       </div>
       <div className="overflow-x-auto border border-white/10 bg-card p-3 md:p-4">

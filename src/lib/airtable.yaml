@@ -75,9 +75,9 @@ tables:
     id: tblo8106uaVFMWyXk
     name: ambassadors
     fields:
-      onboardingComplete:
+      onboardingStatus:
         id: flde1JpD9Ja4vz4vw
-        name: onboarding_complete
+        name: onboarding_status
       tshirtSent:
         id: fldD7Pc1jt9VjiAgh
         name: tshirt-sent

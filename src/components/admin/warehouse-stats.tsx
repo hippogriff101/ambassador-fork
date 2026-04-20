@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Fragment, useEffect, useState } from "react";
+import { Cell, Pie, PieChart, Tooltip } from "recharts";
 import { useTranslations } from "next-intl";
 
 type WarehouseStatsData = {
@@ -98,38 +98,39 @@ export function WarehouseStats({ locale }: { locale: string }) {
     { name: t("labor"), value: data.expenditure.labor, fill: "var(--chart-signups)" },
     { name: t("postage"), value: data.expenditure.postage, fill: "var(--chart-approved)" },
   ];
+  const legendItems = [
+    { name: t("contents"), value: currencyFmt.format(data.expenditure.contents), fill: "var(--chart-applications)" },
+    { name: t("labor"), value: currencyFmt.format(data.expenditure.labor), fill: "var(--chart-signups)" },
+    { name: t("postage"), value: currencyFmt.format(data.expenditure.postage), fill: "var(--chart-approved)" },
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-3">
+      <div className="grid gap-6 sm:grid-cols-[minmax(16rem,1fr)_auto] sm:items-stretch">
+        <div className="min-w-0 flex flex-col gap-3">
           <div>
             <p className="font-body text-sm text-secondary">{t("expenditure-label")}</p>
             <p className="text-2xl text-white">{currencyFmt.format(data.expenditure.total)}</p>
           </div>
-          <div className="space-y-1 font-body text-sm text-white">
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full" style={{ backgroundColor: "var(--chart-applications)" }} />
-              <span>{t("contents")}</span>
-              <span className="ml-auto">{currencyFmt.format(data.expenditure.contents)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full" style={{ backgroundColor: "var(--chart-signups)" }} />
-              <span>{t("labor")}</span>
-              <span className="ml-auto">{currencyFmt.format(data.expenditure.labor)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full" style={{ backgroundColor: "var(--chart-approved)" }} />
-              <span>{t("postage")}</span>
-              <span className="ml-auto">{currencyFmt.format(data.expenditure.postage)}</span>
-            </div>
+          <div className="grid grid-cols-[max-content_max-content] gap-x-3 gap-y-2 font-body text-sm text-white tabular-nums">
+            {legendItems.map((item) => (
+              <Fragment key={item.name}>
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                  <span>{item.name}</span>
+                </div>
+                <span className="text-left">
+                  {item.value}
+                </span>
+              </Fragment>
+            ))}
           </div>
           <p className="font-body text-xs text-white/50">
             {t("completed-orders", { count: data.completedOrders })}
           </p>
         </div>
 
-        <div className="h-48 w-48 shrink-0">
+        <div className="shrink-0 justify-self-start sm:justify-self-end" style={{ width: 160, height: 160 }}>
           <ExpenditurePie data={pieData} locale={locale} />
         </div>
       </div>
@@ -148,8 +149,7 @@ function ExpenditurePie({
   const hasNonZeroData = nonZero.length > 0;
 
   return (
-    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-      <PieChart>
+    <PieChart width={160} height={160}>
         <Pie
           data={[{ name: "track", value: 1, fill: "var(--border)" }]}
           dataKey="value"
@@ -197,7 +197,6 @@ function ExpenditurePie({
           </text>
         )}
       </PieChart>
-    </ResponsiveContainer>
   );
 }
 

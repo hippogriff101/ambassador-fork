@@ -402,7 +402,7 @@ export default async function AdminApplicationDetailPage({
             {application.user_id !== null ? (
               <Link
                 href={`/admin/users/${application.user_id}#internal-notes`}
-                className={buttonVariants({ variant: "success", size: "app" })}
+                className={buttonVariants({ variant: "outline", size: "app" })}
               >
                 {t("admin.application-detail.actions.open-internal-notes")}
               </Link>

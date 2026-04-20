@@ -16,6 +16,7 @@ import { ensureSchema } from "@/lib/database/ensure-schema";
 import { fetchGeo, geocodeIp, linkAnonymousVisits } from "@/lib/geo";
 import { encryptHcaAccessToken } from "@/lib/hca-access-token";
 import { getAppUrl, getRequestIp, getSafeRedirectPath } from "@/lib/http";
+import { createDefaultReferralLinkForUser } from "@/lib/referrals";
 import { createToken, setSession } from "@/lib/session";
 import {
   normalizeHackClubAddresses,
@@ -204,6 +205,8 @@ export async function GET(request: Request) {
     }
     cookieStore.delete(AUTH_INTENT_COOKIE_NAME);
   }
+
+  await createDefaultReferralLinkForUser(user.id);
 
   await sql`
     INSERT INTO ip_visits (

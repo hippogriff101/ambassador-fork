@@ -32,7 +32,7 @@ export type ApplicationFieldKey =
   | "ambassadors";
 
 export type AmbassadorFieldKey =
-  | "onboardingComplete"
+  | "onboardingStatus"
   | "tshirtSent";
 
 type AirtableTableKey = "applications" | "ambassadors" | "onboarding" | "syncRoster";

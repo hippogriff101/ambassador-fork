@@ -151,7 +151,7 @@ export default async function AdminOrdersPage({
       </header>
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-full max-w-sm">
-          <SearchBar placeholder={t("admin.search-placeholder")} />
+          <SearchBar placeholder={t("admin.search-placeholder")} strongPlaceholder />
         </div>
         <div className="w-full sm:ml-auto sm:w-auto">
           <StatusFilter

@@ -319,7 +319,7 @@ async function isEligibleForOfficeGrantProvisioning(userId: string) {
     applicationAirtablePayload: latestApplication.airtable_payload,
   });
 
-  return onboardingStatus.onboardingComplete;
+  return onboardingStatus.isOnboardingComplete;
 }
 
 async function findMatchingExistingGrant(input: {
@@ -498,7 +498,7 @@ export async function queueEligibleOfficeGrants() {
       applicationAirtablePayload: candidate.airtable_payload,
     });
 
-    if (!onboardingStatus.onboardingComplete) {
+    if (!onboardingStatus.isOnboardingComplete) {
       continue;
     }
 

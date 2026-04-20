@@ -310,7 +310,7 @@ a {
   }
 
   :is(
-    button:not([data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
+    button:not([data-slot^="select-"], [data-slot^="multiselect-"], [data-slot="icon-link"], [data-slot="open-link"]),
     [data-slot="button"],
     a[data-slot="button"],
     a.inline-flex.rounded-xl
@@ -319,7 +319,7 @@ a {
   }
 
   :is(
-    button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
+    button:not(:disabled, [data-slot^="select-"], [data-slot^="multiselect-"], [data-slot="icon-link"], [data-slot="open-link"]),
     [data-slot="button"]:not(:disabled),
     a[data-slot="button"],
     a.inline-flex.rounded-xl
@@ -328,7 +328,7 @@ a {
   }
 
   :is(
-    button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
+    button:not(:disabled, [data-slot^="select-"], [data-slot^="multiselect-"], [data-slot="icon-link"], [data-slot="open-link"]),
     [data-slot="button"]:not(:disabled),
     a[data-slot="button"],
     a.inline-flex.rounded-xl
@@ -340,7 +340,7 @@ a {
   }
 
   :is(
-      button:not(:disabled, [data-slot^="select-"], [data-slot="icon-link"], [data-slot="open-link"]),
+      button:not(:disabled, [data-slot^="select-"], [data-slot^="multiselect-"], [data-slot="icon-link"], [data-slot="open-link"]),
       [data-slot="button"]:not(:disabled),
       a[data-slot="button"],
       a.inline-flex.rounded-xl

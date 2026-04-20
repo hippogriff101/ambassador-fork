@@ -310,6 +310,27 @@ admin:
     users: Users
     applications: Applications
     orders: Orders
+    audit-log: Audit
+  audit-log:
+    metadata:
+      title: Audit log
+    title: Audit Log
+    empty: No audit events recorded yet
+    unknown-user: Unknown user
+    system: System
+    event-filter:
+      all: All events
+    user-filter:
+      all: All admins
+      selection-noun: admins
+      select-all: Select all
+      deselect-all: Deselect all
+    columns:
+      event: Event
+      actor: Actor
+      target: Target
+      details: Details
+      when: When
   overview:
     metadata:
       title: Overview

@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     applicationAirtablePayload: latestApp?.airtable_payload ?? null,
   });
 
-  if (!onboardingStatus.hasAmbassadorRecord || !onboardingStatus.onboardingComplete) {
+  if (!onboardingStatus.hasAmbassadorRecord || !onboardingStatus.isOnboardingComplete) {
     return Response.json({ error: "onboarding_incomplete" }, { status: 403 });
   }
 

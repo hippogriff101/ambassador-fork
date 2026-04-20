@@ -15,6 +15,7 @@ export async function proxy(request: NextRequest) {
     "/api/shirt",
     "/api/posters",
     "/api/poster-groups",
+    "/api/referral-links",
     "/api/qr",
   ].some((prefix) => pathname.startsWith(prefix));
 
@@ -43,6 +44,7 @@ export const config = {
     "/api/shirt/:path*",
     "/api/posters/:path*",
     "/api/poster-groups/:path*",
+    "/api/referral-links/:path*",
     "/api/qr/:path*",
   ],
 };

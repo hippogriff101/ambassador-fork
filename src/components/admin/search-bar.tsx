@@ -4,7 +4,13 @@ import Icon from "@hackclub/icons";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useRef, useTransition } from "react";
 
-export function SearchBar({ placeholder }: { placeholder: string }) {
+export function SearchBar({
+  placeholder,
+  strongPlaceholder = false,
+}: {
+  placeholder: string;
+  strongPlaceholder?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -36,7 +42,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
             });
           }, 300);
         }}
-        className="ui-input-surface !bg-muted h-8 w-full !rounded-none [border-radius:0!important] border-0 pl-9 pr-4 font-body text-sm text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/15"
+        className={`ui-input-surface !bg-muted h-8 w-full !rounded-none [border-radius:0!important] border-0 pl-9 pr-4 font-body text-sm text-foreground ${strongPlaceholder ? "placeholder:text-foreground" : "placeholder:text-foreground/40"} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/15`}
       />
     </div>
   );

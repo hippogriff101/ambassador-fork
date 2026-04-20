@@ -2,7 +2,6 @@ import sql from "@/lib/database/client";
 import type {
   CreatePosterGroupInput,
   CreatePosterInput,
-  PosterGroupCharset,
   PosterGroupRow,
   PosterMetadata,
   PosterRow,
@@ -13,6 +12,8 @@ async function referralCodeExists(candidate: string) {
   const row = (await sql<{ exists: boolean }[]>`
     SELECT EXISTS(
       SELECT 1 FROM posters WHERE referral_code = ${candidate}
+      UNION ALL
+      SELECT 1 FROM referral_links WHERE code = ${candidate}
     ) AS exists
   `).at(0);
 
@@ -34,16 +35,9 @@ function randomFromCharset(charset: string, length: number) {
   return Array.from(bytes, (byte) => charset[byte % charset.length]).join("");
 }
 
-async function generateUniqueReferralCode(charset: PosterGroupCharset) {
-  const alphabet =
-    charset === "numeric"
-      ? "0123456789"
-      : charset === "alpha"
-        ? "ABCDEFGHJKLMNPQRSTUVWXYZ"
-        : "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
+async function generateUniqueReferralCode() {
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    const candidate = randomFromCharset(alphabet, 8);
+    const candidate = `AMB-${randomFromCharset("ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789", 8)}`;
     if (!(await referralCodeExists(candidate))) {
       return candidate;
     }
@@ -65,9 +59,8 @@ async function generateUniqueQrToken() {
 
 export async function createPoster(input: CreatePosterInput) {
   const posterType = input.posterType ?? "color";
-  const charset = input.charset ?? "alphanumeric";
   const id = crypto.randomUUID();
-  const referralCode = await generateUniqueReferralCode(charset);
+  const referralCode = await generateUniqueReferralCode();
   const qrCodeToken = await generateUniqueQrToken();
 
   const [poster] = await sql<PosterRow[]>`
@@ -126,7 +119,7 @@ export async function createPosterGroup(input: CreatePosterGroupInput) {
     const posters: PosterRow[] = [];
     for (let index = 0; index < input.count; index += 1) {
       const posterId = crypto.randomUUID();
-      const referralCode = await generateUniqueReferralCode(charset);
+      const referralCode = await generateUniqueReferralCode();
       const qrCodeToken = await generateUniqueQrToken();
       const [poster] = await tx<PosterRow[]>`
         INSERT INTO posters (
