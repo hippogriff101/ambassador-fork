@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import Icon from "@hackclub/icons";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { SearchBar } from "@/components/admin/search-bar";
@@ -211,7 +210,7 @@ export default async function AdminAuditLogPage({
                     <span className="text-secondary">-</span>
                   )}
                 </td>
-                <td className="max-w-sm px-5 py-4 font-body text-sm text-secondary">
+                <td className="max-w-sm px-5 py-4 font-body text-sm font-bold text-white">
                   <span className="line-clamp-2" title={formatAuditEventSummary(event)}>
                     {formatAuditEventSummary(event)}
                   </span>
@@ -225,7 +224,7 @@ export default async function AdminAuditLogPage({
                     aria-label={t("admin.audit-log.view-event")}
                     className="ui-open-link inline-flex font-body text-lg leading-none"
                   >
-                    <Icon glyph="external" size={20} />
+                    <span aria-hidden="true">↗</span>
                   </Link>
                 </td>
               </tr>

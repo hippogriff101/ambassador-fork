@@ -450,7 +450,7 @@ function OnboardingPromptBanner({
           target="_blank"
           rel="noreferrer"
           aria-label={t("dashboard.onboarding.cta")}
-          className="ui-open-link inline-flex"
+          className="ui-open-link ml-1 inline-flex"
         >
           ↗
         </a>

@@ -7,9 +7,10 @@ import { ApproveWithGrantForm } from "@/components/admin/approve-with-grant-form
 import { ConfirmSubmitForm } from "@/components/admin/confirm-submit-form";
 import { DetailFieldRow, DetailPager, DetailSection } from "@/components/admin/detail";
 import { SlackAvatar, SlackProfile } from "@/components/admin/slack-profile";
-import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { SuperuserPasswordForm } from "@/components/admin/superuser-password-form";
 import { buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { pillVariants } from "@/components/ui/pill";
 import { Textarea } from "@/components/ui/textarea";
 import { getTranslatedPageMetadata } from "@/i18n/metadata";
@@ -384,56 +385,26 @@ export default async function AdminUserDetailPage({
           ) : null}
 
           {user.is_admin !== true ? (
-            <ConfirmSubmitForm
+            <SuperuserPasswordForm
               action={`/api/admin/users/${user.id}/make-admin`}
-              method="POST"
-              className="max-w-xl"
+              buttonLabel={t("admin.user-detail.actions.make-admin")}
               confirmationMessage={t("admin.user-detail.actions.make-admin-confirmation")}
-            >
-              <input type="hidden" name="redirectTo" value={`/admin/users/${user.id}`} />
-              <label className="mb-3 block text-sm text-secondary">
-                {t("admin.user-detail.superuser.password-label")}
-                <Input
-                  name="superuserPassword"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  disabled={!superuserConfigured}
-                  className="ui-input-surface !bg-muted mt-2 h-11 !rounded-none [border-radius:0!important] border-0 px-4 font-body text-base text-foreground placeholder:text-foreground/40 hover:!bg-muted md:text-base"
-                />
-              </label>
-              <button
-                disabled={!superuserConfigured}
-                className={buttonVariants({ variant: "success", size: "app" })}
-              >
-                {t("admin.user-detail.actions.make-admin")}
-              </button>
-            </ConfirmSubmitForm>
+              disabled={!superuserConfigured}
+              passwordPrompt={t("admin.user-detail.superuser.password-label")}
+              redirectTo={`/admin/users/${user.id}`}
+              variant="success"
+            />
           ) : null}
 
           {canRemoveAdmin ? (
-            <ConfirmSubmitForm
+            <SuperuserPasswordForm
               action={`/api/admin/users/${user.id}/remove-admin`}
-              method="POST"
-              className="max-w-xl"
+              buttonLabel={t("admin.user-detail.actions.remove-admin")}
               confirmationMessage={t("admin.user-detail.actions.remove-admin-confirmation")}
-            >
-              <input type="hidden" name="redirectTo" value={`/admin/users/${user.id}`} />
-              <label className="mb-3 block text-sm text-secondary">
-                {t("admin.user-detail.superuser.password-label")}
-                <Input
-                  name="superuserPassword"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  disabled={!superuserConfigured}
-                  className="ui-input-surface !bg-muted mt-2 h-11 !rounded-none [border-radius:0!important] border-0 px-4 font-body text-base text-foreground placeholder:text-foreground/40 hover:!bg-muted md:text-base"
-                />
-              </label>
-              <button disabled={!superuserConfigured} className={buttonVariants({ size: "app" })}>
-                {t("admin.user-detail.actions.remove-admin")}
-              </button>
-            </ConfirmSubmitForm>
+              disabled={!superuserConfigured}
+              passwordPrompt={t("admin.user-detail.superuser.password-label")}
+              redirectTo={`/admin/users/${user.id}`}
+            />
           ) : null}
 
           {latestApplication ? (

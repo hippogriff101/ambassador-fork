@@ -2,7 +2,7 @@ import type { AdminActionEvent } from "@/lib/admin-action-events";
 
 type AuditEventLike = {
   action: string;
-  metadata: Record<string, unknown>;
+  metadata: unknown;
 };
 
 type DetailRow = {
@@ -72,7 +72,7 @@ export function formatEventType(event: string): string {
 }
 
 export function formatAuditEventSummary(event: AuditEventLike): string {
-  const metadata = event.metadata ?? {};
+  const metadata = getMetadataRecord(event.metadata) ?? {};
 
   switch (event.action) {
     case "application_deleted":
@@ -114,13 +114,47 @@ export function formatAuditEventSummary(event: AuditEventLike): string {
   }
 }
 
-export function getAuditEventDetailRows(metadata: Record<string, unknown>): DetailRow[] {
-  return Object.entries(metadata)
+export function getAuditEventDetailRows(metadata: unknown): DetailRow[] {
+  const record = getMetadataRecord(metadata);
+
+  if (record === null) {
+    return metadata === null || metadata === undefined || metadata === ""
+      ? []
+      : [{ label: "Details", value: formatMetadataValue(metadata) }];
+  }
+
+  return Object.entries(record)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => ({
       label: METADATA_LABELS[key] ?? formatMetadataKey(key),
       value: formatMetadataValue(value),
     }));
+}
+
+function getMetadataRecord(metadata: unknown): Record<string, unknown> | null {
+  if (typeof metadata === "string") {
+    const trimmedMetadata = metadata.trim();
+
+    if (trimmedMetadata === "") {
+      return null;
+    }
+
+    try {
+      return getMetadataRecord(JSON.parse(trimmedMetadata));
+    } catch {
+      return null;
+    }
+  }
+
+  if (
+    typeof metadata === "object" &&
+    metadata !== null &&
+    !Array.isArray(metadata)
+  ) {
+    return metadata as Record<string, unknown>;
+  }
+
+  return null;
 }
 
 function isKnownAdminActionEvent(event: string): event is AdminActionEvent {
@@ -185,7 +219,7 @@ function formatAction(value: unknown) {
     : "this admin action";
 }
 
-function getFallbackSummary(metadata: Record<string, unknown>) {
+function getFallbackSummary(metadata: unknown) {
   const rows = getAuditEventDetailRows(metadata);
 
   if (rows.length === 0) {

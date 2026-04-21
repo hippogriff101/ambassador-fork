@@ -78,7 +78,7 @@ dashboard:
     status: Active Ambassador
   onboarding:
     title: "Complete onboarding first:"
-    body: Finish ambassador onboarding to unlock your office grant and shirt order
+    body: Finish ambassador onboarding to unlock your office grant and shirt order.
     cta: Complete onboarding
   rejected:
     eyebrow: Try Again

@@ -128,7 +128,7 @@ export default async function AdminAuditLogEventPage({
       >
         {detailRows.length > 0 ? (
           detailRows.map((row) => (
-            <DetailFieldRow key={row.label} label={row.label} value={row.value} />
+            <AuditDetailRow key={row.label} label={row.label} value={row.value} />
           ))
         ) : (
           <p className="font-body text-base text-white">
@@ -136,6 +136,25 @@ export default async function AdminAuditLogEventPage({
           </p>
         )}
       </DetailSection>
+    </div>
+  );
+}
+
+function AuditDetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null;
+}) {
+  const displayValue = value !== null && value.trim() !== "" ? value : "-";
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-[14rem_minmax(0,1fr)] sm:gap-5">
+      <div className="text-sm text-secondary">{label}</div>
+      <div className="break-words font-body text-base font-bold text-white [overflow-wrap:anywhere]">
+        {displayValue}
+      </div>
     </div>
   );
 }
