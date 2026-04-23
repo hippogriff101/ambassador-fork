@@ -5,15 +5,15 @@ const questions = [
       <>
         <p>
           Help spread the word about Hack Club in your country! 
-          <ul className="space-y-2 pl-6 list-disc">
-            <li>
-              Put up posters around your city advertising The Stardance Challenge.
-            </li>
-            <li>
-              Share your referral links with likeminded teens in your city.
-            </li>
-          </ul>
         </p>
+        <ul className="space-y-2 pl-6 list-disc">
+          <li>
+            Put up posters around your city advertising The Stardance Challenge.
+          </li>
+          <li>
+            Share your referral links with likeminded teens in your city.
+          </li>
+        </ul>
       </>
     ),
   },
