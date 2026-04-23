@@ -206,7 +206,7 @@ function DecisionReasonModal({
           <h3 id={titleId} className="text-xl text-white">
             {title}
           </h3>
-          <p className="font-body text-sm text-secondary">Add a reason before submitting.</p>
+          <p className="font-body text-sm text-secondary">Add a reason before submitting. <strong>Remember: this will be shared with the applicant.</strong></p>
         </div>
 
         <label className="block text-sm text-secondary">
