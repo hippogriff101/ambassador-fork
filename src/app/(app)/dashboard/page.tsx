@@ -38,13 +38,14 @@ import {
   type HackClubAddress,
 } from "@/lib/settings";
 import {
+  buildEmptyShirtStockBySize,
   buildWarehousePublicOrderUrl,
   buildWarehouseTrackingUrl,
   SHIRT_SKU_PREFIX,
 } from "@/lib/shop";
 import { isUserManualDashboardState } from "@/lib/user-dashboard-state";
 import { cn } from "@/lib/utils";
-import { parseWarehouseOrderResponse } from "@/lib/warehouse";
+import { loadShirtStockBySize, parseWarehouseOrderResponse } from "@/lib/warehouse";
 
 import ShirtOrderSection, {
   type ShirtOrderSectionProps,
@@ -158,17 +159,25 @@ export default async function DashboardPage({
   const shouldLoadShirtAddresses = canUseShirts && !shirtRequiresOnboarding;
   let shirtNeedsAddressRefresh = false;
   let shirtAddresses: HackClubAddress[] = [];
+  let shirtStockBySize = buildEmptyShirtStockBySize();
   const hcaAccessToken = readHcaAccessToken(user.hca_access_token);
 
   if (shouldLoadShirtAddresses) {
-    const addressState = await loadUserHackClubAddresses({
-      userId: session.sub,
-      storedAddresses: user.hca_addresses,
-      accessToken: hcaAccessToken,
-    });
+    const [addressState, stockBySize] = await Promise.all([
+      loadUserHackClubAddresses({
+        userId: session.sub,
+        storedAddresses: user.hca_addresses,
+        accessToken: hcaAccessToken,
+      }),
+      loadShirtStockBySize().catch((error) => {
+        console.error("[shirts] unable to load live shirt stock", error);
+        return buildEmptyShirtStockBySize();
+      }),
+    ]);
 
     shirtAddresses = addressState.addresses;
     shirtNeedsAddressRefresh = addressState.needsAddressRefresh;
+    shirtStockBySize = stockBySize;
   }
   const warehouseOrder = existingOrderRow
     ? parseWarehouseOrderResponse(existingOrderRow.warehouse_payload)
@@ -192,6 +201,7 @@ export default async function DashboardPage({
     requiresOnboarding: shirtRequiresOnboarding,
     onboardingStatus: shirtOnboardingStatus.status,
     onboardingFormUrl: "https://forms.hackclub.com/t/mJvXsYY41Lus",
+    stockBySize: shirtStockBySize,
   };
 
   const canAccessAdmin = Boolean(session.impersonator) || Boolean(user.is_admin ?? session.isAdmin);

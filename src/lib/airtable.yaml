@@ -94,6 +94,29 @@ tables:
   onboarding:
     id: tblqRWF97F8bt59nr
     name: onboarding
+    fields:
+      id:
+        id: fld0yL094qcJvS77q
+        name: id
+      ambassador:
+        id: fldlBFF40d98gDQIs
+        name: ambassador
+      status:
+        id: flddNroy402O8GBsZ
+        name: status
+        choices:
+          submitted:
+            id: sel11pBtGV0kx1FiC
+            name: Submitted
+          pendingSignature:
+            id: selLn9KxP1dD0G1mT
+            name: Pending Signature
+          completed:
+            id: selTgDNAcST9a5OsY
+            name: Completed
+      hcbEmail:
+        id: fldal6PL0uD74PTDn
+        name: hcb_email
   syncRoster:
     id: tblslMnXrac9C7euL
     name: sync-roster

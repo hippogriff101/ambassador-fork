@@ -31,7 +31,6 @@ import {
   refreshOfficeGrantBalanceForUser,
 } from "@/lib/hcb/grants";
 import { getCachedHackatimeTrustLevel } from "@/lib/hackatime";
-import { OFFICE_GRANT_AMOUNT_CENTS, OFFICE_GRANT_PURPOSE } from "@/lib/hcb/constants";
 import { readHcaAccessToken } from "@/lib/hca-access-token";
 import { ensureUserAddressSchema } from "@/lib/database/user-address-schema";
 import {
@@ -258,9 +257,9 @@ export default async function AdminUserDetailPage({
   });
   const officeGrantDashboardMessage = getOfficeGrantDashboardMessage({ grant: officeGrant });
   const officeGrantUrl = officeGrantDashboardMessage.href;
-  const officeGrantDashboardBody = officeGrantDashboardMessage.messageKey === "linked"
-    ? `${t("office-grant.messages.linked-open-label")} ↗`
-    : t(`office-grant.messages.${officeGrantDashboardMessage.messageKey}`);
+  const hasLinkedOfficeGrant =
+    officeGrant?.provisioningState === "linked" &&
+    officeGrant?.grantId !== null;
   const officeGrantBalance =
     officeGrant?.balanceCents !== null &&
     officeGrant?.balanceCents !== undefined &&
@@ -597,11 +596,11 @@ export default async function AdminUserDetailPage({
           />
           <DetailFieldRow
             label="Purpose"
-            value={officeGrant?.purpose ?? OFFICE_GRANT_PURPOSE}
+            value={officeGrant?.purpose ?? "Office grant!"}
           />
           <DetailFieldRow
             label="Amount"
-            value={usdFormatter.format((officeGrant?.amountCents ?? OFFICE_GRANT_AMOUNT_CENTS) / 100)}
+            value={usdFormatter.format((officeGrant?.amountCents ?? 2_000) / 100)}
           />
           <div className="grid gap-2 sm:grid-cols-[14rem_minmax(0,1fr)] sm:gap-5">
             <div className="text-sm text-secondary">Current balance</div>
@@ -609,15 +608,20 @@ export default async function AdminUserDetailPage({
               {officeGrantBalance ?? "-"}
             </div>
           </div>
-          <DetailFieldRow
-            label="Grant link"
-            value={officeGrantUrl}
-            mono
-          />
-          <DetailFieldRow
-            label="User-facing status"
-            value={officeGrantDashboardBody}
-          />
+          <DetailRow label="Grant link">
+            {officeGrantUrl !== null ? (
+              <a
+                href={officeGrantUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-body text-sm text-white underline transition-opacity hover:opacity-80"
+              >
+                {officeGrantUrl}
+              </a>
+            ) : (
+              <div className="font-body text-sm text-white">-</div>
+            )}
+          </DetailRow>
           <DetailFieldRow
             label="Last error"
             value={officeGrant?.lastError}
@@ -636,28 +640,18 @@ export default async function AdminUserDetailPage({
           />
 
           <div className="flex flex-wrap items-end gap-4">
-            {officeGrantUrl !== null ? (
-              <a
-                href={officeGrantUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="ui-open-link inline-flex font-body text-lg leading-none"
-                aria-label="Open office grant"
+            {!hasLinkedOfficeGrant ? (
+              <ConfirmSubmitForm
+                action={`/api/admin/users/${user.id}/hcb-grant/provision`}
+                method="POST"
+                confirmationMessage="Are you sure?"
               >
-                <span aria-hidden="true">↗</span>
-              </a>
+                <input type="hidden" name="redirectTo" value={`/admin/users/${user.id}#office-grant`} />
+                <button className={buttonVariants({ variant: "success", size: "app" })}>
+                  Provision grant
+                </button>
+              </ConfirmSubmitForm>
             ) : null}
-
-            <ConfirmSubmitForm
-              action={`/api/admin/users/${user.id}/hcb-grant/provision`}
-              method="POST"
-              confirmationMessage="Are you sure?"
-            >
-              <input type="hidden" name="redirectTo" value={`/admin/users/${user.id}#office-grant`} />
-              <button className={buttonVariants({ variant: "success", size: "app" })}>
-                Provision grant
-              </button>
-            </ConfirmSubmitForm>
 
             <ConfirmSubmitForm
               action={`/api/admin/users/${user.id}/hcb-grant/unlink`}
@@ -684,7 +678,7 @@ export default async function AdminUserDetailPage({
                 name="grantId"
                 type="text"
                 placeholder="grt_..."
-                className="ui-input-surface !bg-muted mt-2 h-11 !rounded-none [border-radius:0!important] border-0 px-4 font-body text-base text-foreground placeholder:text-foreground/40 hover:!bg-muted md:text-base"
+                className="ui-input-surface !bg-muted mt-2 h-11 !rounded-none [border-radius:0!important] border-0 px-4 font-body text-base font-normal text-foreground placeholder:text-foreground/40 hover:!bg-muted md:text-base"
               />
             </label>
             <button className={buttonVariants({ variant: "success", size: "app" })}>

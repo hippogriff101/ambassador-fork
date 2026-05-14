@@ -1,6 +1,6 @@
 import { syncAirtableApplicationsToPostgres } from "@/lib/applications/sync";
 import { ensureSchema } from "@/lib/database/ensure-schema";
-import { queueEligibleOfficeGrants } from "@/lib/hcb/grants";
+import { processPendingOfficeGrants, queueEligibleOfficeGrants } from "@/lib/hcb/grants";
 
 const LEGACY_ENV_KEYS = {
   intervalMs: "DEV_AIRTABLE_SYNC_INTERVAL_MS",
@@ -47,6 +47,7 @@ async function runSync(timeoutMs: number) {
       signal: controller.signal,
     });
     const queuedOfficeGrants = await queueEligibleOfficeGrants();
+    const processedOfficeGrants = await processPendingOfficeGrants();
     const elapsedMs = Date.now() - startedAt;
     console.log(
       `[airtable-sync] ok (${elapsedMs}ms) ${[
@@ -56,6 +57,9 @@ async function runSync(timeoutMs: number) {
         `unmatched=${result.unmatchedApplications}`,
         `matchedUsers=${result.matchedUsers}`,
         `queuedOfficeGrants=${queuedOfficeGrants}`,
+        `attemptedOfficeGrants=${processedOfficeGrants.attempted}`,
+        `linkedOfficeGrants=${processedOfficeGrants.linked}`,
+        `failedOfficeGrants=${processedOfficeGrants.failed}`,
       ].join(" ")}`,
     );
   } catch (error) {

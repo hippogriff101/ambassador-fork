@@ -2,6 +2,7 @@ import type { HackClubAddress } from "@/lib/settings";
 
 export const SHIRT_SIZES = ["S", "M", "L", "XL"] as const;
 export type ShirtSize = (typeof SHIRT_SIZES)[number];
+export type ShirtStockBySize = Record<ShirtSize, number | null>;
 export const SHIRT_SKU_PREFIX = "Swa/Shirt/HC/";
 
 export function isShirtSize(value: unknown): value is ShirtSize {
@@ -10,6 +11,15 @@ export function isShirtSize(value: unknown): value is ShirtSize {
 
 export function shirtSku(size: ShirtSize) {
   return `${SHIRT_SKU_PREFIX}${size}`;
+}
+
+export function buildEmptyShirtStockBySize(): ShirtStockBySize {
+  return {
+    S: null,
+    M: null,
+    L: null,
+    XL: null,
+  };
 }
 
 export const ORDER_STATUS_PENDING = "pending";

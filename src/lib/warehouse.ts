@@ -1,3 +1,10 @@
+import {
+  buildEmptyShirtStockBySize,
+  SHIRT_SIZES,
+  shirtSku,
+  type ShirtStockBySize,
+} from "@/lib/shop";
+
 export type HackClubAuthAddress = {
   first_name?: string
   last_name?: string
@@ -58,6 +65,12 @@ export type WarehouseOrderResponse = {
   labor_cost?: string | number
   postage_cost?: string | number
   idempotency_key?: string
+}
+
+export type WarehouseSkuResponse = {
+  name: string
+  in_stock: number | null
+  inbound: number | null
 }
 
 type WarehouseCreatePayload = {
@@ -215,6 +228,39 @@ function unwrapWarehouseOrderResponse(value: unknown): Record<string, unknown> |
   return record
 }
 
+function unwrapWarehouseSkuResponse(value: unknown): Record<string, unknown> | null {
+  if (typeof value === "string") {
+    try {
+      return unwrapWarehouseSkuResponse(JSON.parse(value) as unknown)
+    } catch {
+      return null
+    }
+  }
+
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null
+  }
+
+  const record = Object.entries(value).reduce<Record<string, unknown>>((next, [key, entry]) => {
+    next[key] = entry
+    return next
+  }, {})
+  const sku = record.sku
+
+  if (
+    typeof sku === "object" &&
+    sku !== null &&
+    !Array.isArray(sku)
+  ) {
+    return Object.entries(sku).reduce<Record<string, unknown>>((next, [key, entry]) => {
+      next[key] = entry
+      return next
+    }, {})
+  }
+
+  return record
+}
+
 export function parseWarehouseOrderResponse(value: unknown): WarehouseOrderResponse | null {
   const payload = unwrapWarehouseOrderResponse(value)
 
@@ -279,6 +325,28 @@ export function parseWarehouseOrderResponse(value: unknown): WarehouseOrderRespo
         : undefined,
     idempotency_key:
       typeof payload.idempotency_key === "string" ? payload.idempotency_key : undefined,
+  }
+}
+
+export function parseWarehouseSkuResponse(value: unknown): WarehouseSkuResponse | null {
+  const payload = unwrapWarehouseSkuResponse(value)
+
+  if (payload === null) {
+    return null
+  }
+
+  const name = typeof payload.name === "string" ? payload.name : undefined
+  const inStock = typeof payload.in_stock === "number" ? payload.in_stock : null
+  const inbound = typeof payload.inbound === "number" ? payload.inbound : null
+
+  if (name === undefined || name === "") {
+    return null
+  }
+
+  return {
+    name,
+    in_stock: inStock,
+    inbound,
   }
 }
 
@@ -430,6 +498,24 @@ export class WarehouseApiClient {
     return order
   }
 
+  async getSku(sku: string) {
+    const response = await this.request(
+      `/api/v1/warehouse/skus/${encodeURIComponent(sku)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    )
+
+    const warehouseSku = parseWarehouseSkuResponse(response)
+
+    if (warehouseSku === null) {
+      throw new Error("Warehouse API returned an unexpected SKU payload")
+    }
+
+    return warehouseSku
+  }
+
   private async request(path: string, init: WarehouseRequestInit): Promise<unknown> {
     const requestBody =
       init.body === undefined || init.body === null
@@ -472,4 +558,25 @@ export class WarehouseApiClient {
 
     return responseBody
   }
+}
+
+export async function loadShirtStockBySize() {
+  const client = new WarehouseApiClient({
+    baseUrl: "https://mail.hackclub.com",
+  })
+  const stockBySize = buildEmptyShirtStockBySize()
+
+  const stocks = await Promise.all(
+    SHIRT_SIZES.map(async (size) => {
+      const sku = await client.getSku(shirtSku(size))
+
+      return [size, sku.in_stock] as const
+    }),
+  )
+
+  for (const [size, inStock] of stocks) {
+    stockBySize[size] = inStock
+  }
+
+  return stockBySize satisfies ShirtStockBySize
 }

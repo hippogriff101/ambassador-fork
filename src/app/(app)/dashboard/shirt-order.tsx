@@ -22,6 +22,7 @@ import {
   ORDER_STATUS_PENDING,
   ORDER_STATUS_REJECTED,
   SHIRT_SIZES,
+  type ShirtStockBySize,
   type ShirtSize,
 } from "@/lib/shop";
 import { formatHackClubAddress, type HackClubAddress } from "@/lib/settings";
@@ -43,6 +44,7 @@ export type ShirtOrderSectionProps = {
   requiresOnboarding: boolean;
   onboardingStatus: string;
   onboardingFormUrl: string;
+  stockBySize: ShirtStockBySize;
 };
 
 export default function ShirtOrderSection(props: ShirtOrderSectionProps) {
@@ -131,6 +133,7 @@ function ShirtOrderBody({
   existingOrder,
   requiresOnboarding,
   onboardingFormUrl,
+  stockBySize,
 }: ShirtOrderSectionProps) {
   const t = useTranslations("shirt");
   const router = useRouter();
@@ -151,6 +154,23 @@ function ShirtOrderBody({
   const [error, setError] = useState("");
   const [order, setOrder] = useState<ShirtOrderState | null>(existingOrder);
   const canPlaceOrder = !order || canPlaceAnotherShirtOrder(order.status);
+  const hasLiveStock = SHIRT_SIZES.some((shirtSize) => stockBySize[shirtSize] !== null);
+  const availableSizes = SHIRT_SIZES.filter((shirtSize) => {
+    const stock = stockBySize[shirtSize];
+    return stock === null || stock > 0;
+  });
+  const hasAvailableSizes = availableSizes.length > 0;
+
+  useEffect(() => {
+    if (availableSizes.includes(size)) {
+      return;
+    }
+
+    const fallbackSize = availableSizes[0];
+    if (fallbackSize !== undefined) {
+      setSize(fallbackSize);
+    }
+  }, [availableSizes, size]);
 
   const handleRefreshAddresses = async () => {
     if (refreshingAddresses) {
@@ -240,6 +260,8 @@ function ShirtOrderBody({
               ? t("errors.not-ambassador")
               : payload?.error === "onboarding_incomplete"
                 ? t("errors.onboarding-incomplete")
+                : payload?.error === "out_of_stock"
+                  ? t("errors.out-of-stock", { size })
                 : payload?.error === "unauthorized"
                 ? t("errors.refresh-addresses")
                   : payload?.error === "already_ordered"
@@ -332,24 +354,36 @@ function ShirtOrderBody({
             <div className="grid grid-cols-4 gap-2">
               {SHIRT_SIZES.map((shirtSize) => {
                 const active = shirtSize === size;
+                const stock = stockBySize[shirtSize];
+                const outOfStock = stock !== null && stock <= 0;
                 return (
                   <Button
                     key={shirtSize}
                     type="button"
                     onClick={() => setSize(shirtSize)}
+                    disabled={outOfStock}
                     variant="destructive"
                     size="app"
                     selected={active}
                     className={cn(
                       "h-14 w-full !rounded-none [border-radius:0!important] font-body text-base tracking-wide shadow-none",
+                      "flex-col gap-0.5 leading-tight disabled:opacity-50",
                       !active && "bg-primary !text-white hover:opacity-100",
                     )}
                   >
-                    {shirtSize}
+                    <span>{shirtSize}</span>
+                    {stock !== null ? (
+                      <span className="text-[11px] font-body">
+                        {outOfStock ? t("stock.out") : t("stock.left", { count: stock })}
+                      </span>
+                    ) : null}
                   </Button>
                 );
               })}
             </div>
+            {hasLiveStock && !hasAvailableSizes ? (
+              <p className="mt-2 font-body text-sm text-primary">{t("stock.none")}</p>
+            ) : null}
           </div>
 
           <div>
@@ -415,7 +449,7 @@ function ShirtOrderBody({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || (hasLiveStock && !hasAvailableSizes)}
               className={buttonVariants({ size: "app" })}
             >
               {submitting ? t("actions.placing") : t("actions.place")}

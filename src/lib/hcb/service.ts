@@ -3,10 +3,6 @@ import "server-only";
 import sql from "@/lib/database/client";
 import { requireEnv } from "@/lib/env";
 import {
-  HCB_BASE_URL,
-  HCB_OAUTH_CREDENTIALS_ROW_ID,
-} from "@/lib/hcb/constants";
-import {
   encryptHcbOauthToken,
   readHcbOauthToken,
 } from "@/lib/hcb/oauth-token";
@@ -206,7 +202,7 @@ async function loadCredentialsRow() {
            access_token, refresh_token, token_type, scopes, expires_at, last_refreshed_at,
            last_error, authorized_by_user_id, created_at, updated_at
     FROM hcb_oauth_credentials
-    WHERE id = ${HCB_OAUTH_CREDENTIALS_ROW_ID}
+    WHERE id = ${"primary"}
     LIMIT 1
   `).at(0) ?? null;
 }
@@ -216,7 +212,7 @@ async function updateLastError(message: string) {
     UPDATE hcb_oauth_credentials
     SET last_error = ${message},
         updated_at = NOW()
-    WHERE id = ${HCB_OAUTH_CREDENTIALS_ROW_ID}
+    WHERE id = ${"primary"}
   `;
 }
 
@@ -245,7 +241,7 @@ async function persistTokenResponse(input: {
       updated_at
     )
     VALUES (
-      ${HCB_OAUTH_CREDENTIALS_ROW_ID},
+      ${"primary"},
       ${input.authorizedHcbUserId ?? null},
       ${input.authorizedHcbUserName ?? null},
       ${input.authorizedHcbUserEmail ?? null},
@@ -277,7 +273,7 @@ async function persistTokenResponse(input: {
 }
 
 async function exchangeToken(params: URLSearchParams) {
-  const response = await fetch(`${HCB_BASE_URL}/api/v4/oauth/token`, {
+  const response = await fetch(`${"https://hcb.hackclub.com"}/api/v4/oauth/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -365,7 +361,7 @@ async function requestHcbJson(
   headers.set("Authorization", `Bearer ${accessToken}`);
   headers.set("Accept", "application/json");
 
-  const response = await fetch(`${HCB_BASE_URL}${path}`, {
+  const response = await fetch(`${"https://hcb.hackclub.com"}${path}`, {
     ...init,
     headers,
     cache: "no-store",
@@ -396,7 +392,7 @@ export function getHcbAuthorizationUrl(state: string) {
     state,
   });
 
-  return `${HCB_BASE_URL}/api/v4/oauth/authorize?${params}`;
+  return `${"https://hcb.hackclub.com"}/api/v4/oauth/authorize?${params}`;
 }
 
 export async function exchangeHcbCodeForTokens(code: string) {
@@ -412,7 +408,7 @@ export async function exchangeHcbCodeForTokens(code: string) {
 }
 
 export async function fetchHcbCurrentUser(accessToken: string) {
-  const response = await fetch(`${HCB_BASE_URL}/api/v4/user`, {
+  const response = await fetch(`${"https://hcb.hackclub.com"}/api/v4/user`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: "application/json",
@@ -498,6 +494,7 @@ export async function createHcbOrganizationCardGrant(input: {
   email: string;
   amountCents: number;
   purpose: string;
+  instructions?: string | null;
 }) {
   const body = await requestHcbJson(
     `/api/v4/organizations/${encodeURIComponent(input.organizationId)}/card_grants`,
@@ -510,6 +507,7 @@ export async function createHcbOrganizationCardGrant(input: {
         email: input.email,
         amount_cents: input.amountCents,
         purpose: input.purpose,
+        instructions: input.instructions ?? undefined,
       }),
     },
   );

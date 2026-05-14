@@ -1,10 +1,16 @@
-import { AirtableClient, AirtableError, createAirtableClient } from "@/lib/airtable";
+import {
+  AirtableClient,
+  AirtableError,
+  type AirtableRecord,
+  createAirtableClient,
+} from "@/lib/airtable";
 import {
   getAirtableApplicationFieldValue,
   getAirtableApplicationsTableId,
 } from "@/lib/applications/airtable";
 import {
   type AmbassadorFieldKey,
+  type OnboardingFieldKey,
   getAirtableBaseId,
   getAirtableFieldChoiceNames,
   getAirtableFieldId,
@@ -20,6 +26,10 @@ export function getAirtableAmbassadorsTableId() {
   return getAirtableTableId("ambassadors");
 }
 
+function getAirtableOnboardingTableId() {
+  return getAirtableTableId("onboarding");
+}
+
 function getAirtableAmbassadorFieldId(
   fieldKey: AmbassadorFieldKey,
 ) {
@@ -31,6 +41,19 @@ function getAirtableAmbassadorFieldValue(
   fieldKey: AmbassadorFieldKey,
 ) {
   return getAirtableFieldValue(fields, "ambassadors", fieldKey);
+}
+
+function getAirtableOnboardingFieldId(
+  fieldKey: OnboardingFieldKey,
+) {
+  return getAirtableFieldId("onboarding", fieldKey);
+}
+
+function getAirtableOnboardingFieldValue(
+  fields: Record<string, unknown>,
+  fieldKey: OnboardingFieldKey,
+) {
+  return getAirtableFieldValue(fields, "onboarding", fieldKey);
 }
 
 async function getRecordById(
@@ -68,6 +91,7 @@ function getRequiredChoiceName(choices: Record<string, string>, key: string) {
 }
 
 const onboardingStatusChoices = getAirtableFieldChoiceNames("ambassadors", "onboardingStatus");
+const onboardingRecordStatusChoices = getAirtableFieldChoiceNames("onboarding", "status");
 
 export const AMBASSADOR_ONBOARDING_STATUS = {
   unsubmitted: "Unsubmitted",
@@ -77,6 +101,22 @@ export const AMBASSADOR_ONBOARDING_STATUS = {
 } as const;
 
 const airtableOnboardingStatuses = new Set(Object.values(onboardingStatusChoices));
+const completedOnboardingRecordStatus = getRequiredChoiceName(
+  onboardingRecordStatusChoices,
+  "completed",
+);
+
+function toTrimmedString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function toStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item !== "")
+    : typeof value === "string" && value !== ""
+      ? [value]
+      : [];
+}
 
 function getAmbassadorRecordIdsFromApplicationPayload(payload: unknown) {
   if (payload === null || payload === undefined || typeof payload !== "object" || Array.isArray(payload)) {
@@ -224,6 +264,106 @@ export async function getAmbassadorOnboardingStatus(input: {
     hasAmbassadorRecord: true,
     status,
     isOnboardingComplete: status === AMBASSADOR_ONBOARDING_STATUS.completed,
+  };
+}
+
+export type AmbassadorOnboardingGrantContact = {
+  hasAmbassadorRecord: boolean;
+  hasCompletedOnboarding: boolean;
+  hcbEmail: string | null;
+};
+
+export async function getAmbassadorOnboardingGrantContact(input: {
+  applicationAirtableRecordId?: string | null;
+  applicationAirtablePayload?: unknown;
+}): Promise<AmbassadorOnboardingGrantContact> {
+  const applicationAirtableRecordId = input.applicationAirtableRecordId?.trim();
+  const client = getAirtableAmbassadorsClient();
+  const cachedAmbassadorRecordIds = getAmbassadorRecordIdsFromApplicationPayload(
+    input.applicationAirtablePayload,
+  );
+
+  if (!client) {
+    return {
+      hasAmbassadorRecord: cachedAmbassadorRecordIds.length > 0,
+      hasCompletedOnboarding: false,
+      hcbEmail: null,
+    };
+  }
+
+  const ambassadorRecordIds = await getAmbassadorRecordIds({
+    client,
+    applicationAirtableRecordId,
+    applicationAirtablePayload: input.applicationAirtablePayload,
+  });
+
+  if (ambassadorRecordIds.length === 0) {
+    return {
+      hasAmbassadorRecord: false,
+      hasCompletedOnboarding: false,
+      hcbEmail: null,
+    };
+  }
+
+  const ambassadorRecordIdSet = new Set(ambassadorRecordIds);
+  const onboardingFields = [
+    getAirtableOnboardingFieldId("id"),
+    getAirtableOnboardingFieldId("ambassador"),
+    getAirtableOnboardingFieldId("status"),
+    getAirtableOnboardingFieldId("hcbEmail"),
+  ];
+  const onboardingRecords: AirtableRecord<Record<string, unknown>>[] = [];
+  let offset: string | undefined;
+
+  do {
+    const response = await client.listRecords<Record<string, unknown>>(
+      getAirtableOnboardingTableId(),
+      {
+        fields: onboardingFields,
+        offset,
+        pageSize: 100,
+      },
+      {
+        returnFieldsByFieldId: true,
+      },
+    );
+
+    onboardingRecords.push(
+      ...response.records.filter((record) =>
+        toStringArray(getAirtableOnboardingFieldValue(record.fields, "ambassador"))
+          .some((recordId) => ambassadorRecordIdSet.has(recordId)),
+      ),
+    );
+    offset = response.offset;
+  } while (offset !== undefined && offset !== "");
+
+  const completedOnboardingRecords = onboardingRecords
+    .filter((record) =>
+      toStringArray(getAirtableOnboardingFieldValue(record.fields, "status"))
+        .includes(completedOnboardingRecordStatus),
+    )
+    .sort((left, right) => {
+      const leftId = getAirtableOnboardingFieldValue(left.fields, "id");
+      const rightId = getAirtableOnboardingFieldValue(right.fields, "id");
+      const leftAutoNumber = typeof leftId === "number" ? leftId : Number.NEGATIVE_INFINITY;
+      const rightAutoNumber = typeof rightId === "number" ? rightId : Number.NEGATIVE_INFINITY;
+
+      return rightAutoNumber - leftAutoNumber;
+    });
+
+  const latestCompletedOnboardingRecord = completedOnboardingRecords[0];
+
+  return {
+    hasAmbassadorRecord: true,
+    hasCompletedOnboarding: latestCompletedOnboardingRecord !== undefined,
+    hcbEmail: latestCompletedOnboardingRecord === undefined
+      ? null
+      : (() => {
+          const email = toTrimmedString(
+            getAirtableOnboardingFieldValue(latestCompletedOnboardingRecord.fields, "hcbEmail"),
+          );
+          return email === "" ? null : email;
+        })(),
   };
 }
 

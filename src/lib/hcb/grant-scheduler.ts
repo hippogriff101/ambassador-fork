@@ -1,5 +1,4 @@
 import { processPendingOfficeGrants } from "@/lib/hcb/grants";
-import { HCB_GRANT_SCHEDULER_INTERVAL_MS } from "@/lib/hcb/constants";
 
 declare global {
   var __hcbGrantSchedulerStarted: boolean | undefined;
@@ -11,7 +10,6 @@ export function startHcbGrantScheduler() {
   }
 
   globalThis.__hcbGrantSchedulerStarted = true;
-  const intervalMs = HCB_GRANT_SCHEDULER_INTERVAL_MS;
   let inFlight = false;
 
   const tick = async () => {
@@ -34,12 +32,12 @@ export function startHcbGrantScheduler() {
     }
   };
 
-  console.log(`[hcb-grants] running every ${Math.round(intervalMs / 1000)}s`);
+  console.log(`[hcb-grants] running every ${Math.round((10 * 60 * 1000) / 1000)}s`);
   void tick();
 
   const intervalId = setInterval(() => {
     void tick();
-  }, intervalMs);
+  }, 10 * 60 * 1000);
 
   const shutdown = (signal: string) => {
     clearInterval(intervalId);

@@ -37,11 +37,18 @@ export type AmbassadorFieldKey =
   | "onboardingStatus"
   | "tshirtSent";
 
+export type OnboardingFieldKey =
+  | "id"
+  | "ambassador"
+  | "status"
+  | "hcbEmail";
+
 type AirtableTableKey = "applications" | "ambassadors" | "onboarding" | "syncRoster";
 
 type AirtableFieldKeysByTable = {
   applications: ApplicationFieldKey;
   ambassadors: AmbassadorFieldKey;
+  onboarding: OnboardingFieldKey;
 };
 
 type AirtableFieldTableKey = keyof AirtableFieldKeysByTable;
@@ -162,6 +169,7 @@ const airtableSchema: AirtableSchema = {
     onboarding: {
       id: onboarding.id,
       name: onboarding.name,
+      fields: readFields(onboarding.fields),
     },
     syncRoster: {
       id: syncRoster.id,

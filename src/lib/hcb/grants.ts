@@ -3,16 +3,9 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { APPLICATION_STATUS_ACCEPTED } from "@/lib/applications/status";
-import { getAmbassadorOnboardingStatus } from "@/lib/ambassadors/airtable";
+import { getAmbassadorOnboardingGrantContact } from "@/lib/ambassadors/airtable";
 import { logAdminActionEvent } from "@/lib/admin-action-events";
 import sql from "@/lib/database/client";
-import {
-  HCB_BASE_URL,
-  HCB_AMBASSADOR_ORGANIZATION_ID,
-  OFFICE_GRANT_AMOUNT_CENTS,
-  OFFICE_GRANT_PURPOSE,
-  OFFICE_GRANT_RETRY_INTERVAL_MS,
-} from "@/lib/hcb/constants";
 import {
   createHcbOrganizationCardGrant,
   fetchHcbCardGrant,
@@ -43,7 +36,6 @@ type UserGrantRow = {
 };
 
 type PendingGrantRow = UserGrantRow & {
-  email: string | null;
   display_name: string;
 };
 
@@ -57,6 +49,11 @@ type LatestApplicationRow = {
   status: string;
   airtable_record_id: string | null;
   airtable_payload: unknown;
+};
+
+type GrantProvisioningTarget = {
+  hasCompletedOnboarding: boolean;
+  email: string | null;
 };
 
 export type OfficeGrantRecord = {
@@ -114,11 +111,17 @@ function buildOfficeGrantUrl(grantId: string | null) {
 
   const grantHashid = grantId.startsWith("cdg_") ? grantId.slice("cdg_".length) : grantId;
 
-  return `${HCB_BASE_URL}/grants/${encodeURIComponent(grantHashid)}`;
+  return `${"https://hcb.hackclub.com"}/grants/${encodeURIComponent(grantHashid)}`;
 }
 
 function normalizeEmail(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? "";
+}
+
+function isMatchingOfficeGrantPurpose(purpose: string | null) {
+  const normalizedPurpose = purpose ?? "Office Expenses";
+
+  return normalizedPurpose === "Office grant!" || normalizedPurpose === "Office Expenses";
 }
 
 function isActiveGrantStatus(status: string | null) {
@@ -127,9 +130,9 @@ function isActiveGrantStatus(status: string | null) {
 
 function isMatchingOfficeGrant(grant: HcbCardGrant, email: string) {
   return (
-    grant.organizationId === HCB_AMBASSADOR_ORGANIZATION_ID &&
-    grant.amountCents === OFFICE_GRANT_AMOUNT_CENTS &&
-    (grant.purpose ?? OFFICE_GRANT_PURPOSE) === OFFICE_GRANT_PURPOSE &&
+    grant.organizationId === "org_lbu4gX" &&
+    grant.amountCents === 2_000 &&
+    isMatchingOfficeGrantPurpose(grant.purpose) &&
     isActiveGrantStatus(grant.status) &&
     normalizeEmail(grant.email) === normalizeEmail(email)
   );
@@ -139,7 +142,7 @@ function assertValidOfficeGrant(
   grant: HcbCardGrant,
   options?: { email?: string | null },
 ) {
-  if (grant.organizationId !== HCB_AMBASSADOR_ORGANIZATION_ID) {
+  if (grant.organizationId !== "org_lbu4gX") {
     throw new Error("Grant does not belong to the Hack Club Ambassador Program organization");
   }
 
@@ -147,21 +150,21 @@ function assertValidOfficeGrant(
     throw new Error("Grant is not active");
   }
 
-  if (grant.amountCents !== OFFICE_GRANT_AMOUNT_CENTS) {
+  if (grant.amountCents !== 2_000) {
     throw new Error("Grant amount does not match the configured office grant amount");
   }
 
-  if ((grant.purpose ?? OFFICE_GRANT_PURPOSE) !== OFFICE_GRANT_PURPOSE) {
+  if (!isMatchingOfficeGrantPurpose(grant.purpose)) {
     throw new Error("Grant purpose does not match the configured office grant purpose");
   }
 
   if (options?.email !== undefined && normalizeEmail(options.email) !== normalizeEmail(grant.email)) {
-    throw new Error("Grant email does not match the user's email address");
+    throw new Error("Grant email does not match the expected email address");
   }
 }
 
 function getRetryAtDate() {
-  return new Date(Date.now() + OFFICE_GRANT_RETRY_INTERVAL_MS);
+  return new Date(Date.now() + 10 * 60 * 1000);
 }
 
 function normalizeHcbError(error: unknown) {
@@ -216,8 +219,8 @@ async function queuePendingGrant(input: {
       ${input.userId},
       'pending',
       ${input.source},
-      ${OFFICE_GRANT_PURPOSE},
-      ${OFFICE_GRANT_AMOUNT_CENTS},
+      ${"Office grant!"},
+      ${2_000},
       NOW(),
       NOW()
     )
@@ -232,11 +235,11 @@ async function queuePendingGrant(input: {
       END,
       purpose = CASE
         WHEN user_hcb_grants.provisioning_state = 'linked' THEN user_hcb_grants.purpose
-        ELSE ${OFFICE_GRANT_PURPOSE}
+        ELSE ${"Office grant!"}
       END,
       amount_cents = CASE
         WHEN user_hcb_grants.provisioning_state = 'linked' THEN user_hcb_grants.amount_cents
-        ELSE ${OFFICE_GRANT_AMOUNT_CENTS}
+        ELSE ${2_000}
       END,
       next_retry_at = CASE
         WHEN user_hcb_grants.provisioning_state = 'linked' THEN user_hcb_grants.next_retry_at
@@ -271,10 +274,10 @@ async function linkGrantRecord(input: {
   await sql`
     UPDATE user_hcb_grants
     SET grant_id = ${input.grant.id},
-        organization_id = ${input.grant.organizationId ?? HCB_AMBASSADOR_ORGANIZATION_ID},
+        organization_id = ${input.grant.organizationId ?? "org_lbu4gX"},
         provisioning_state = 'linked',
         provisioning_source = ${input.source},
-        purpose = ${input.grant.purpose ?? OFFICE_GRANT_PURPOSE},
+        purpose = ${input.grant.purpose ?? "Office grant!"},
         amount_cents = ${input.grant.amountCents},
         balance_cents = ${input.grant.balanceCents},
         balance_synced_at = ${new Date()},
@@ -293,9 +296,9 @@ async function linkGrantRecord(input: {
     action: input.source === "manual" ? "user_hcb_grant_linked" : "user_hcb_grant_provisioned",
     metadata: {
       grantId: input.grant.id,
-      organizationId: input.grant.organizationId ?? HCB_AMBASSADOR_ORGANIZATION_ID,
+      organizationId: input.grant.organizationId ?? "org_lbu4gX",
       amountCents: input.grant.amountCents,
-      purpose: input.grant.purpose ?? OFFICE_GRANT_PURPOSE,
+      purpose: input.grant.purpose ?? "Office grant!",
       source: input.source,
     },
   });
@@ -312,18 +315,29 @@ async function loadLatestApplication(userId: string) {
 }
 
 async function isEligibleForOfficeGrantProvisioning(userId: string) {
+  const provisioningTarget = await getOfficeGrantProvisioningTarget(userId);
+  return provisioningTarget.hasCompletedOnboarding;
+}
+
+async function getOfficeGrantProvisioningTarget(userId: string): Promise<GrantProvisioningTarget> {
   const latestApplication = await loadLatestApplication(userId);
 
   if (latestApplication === null || latestApplication.status !== APPLICATION_STATUS_ACCEPTED) {
-    return false;
+    return {
+      hasCompletedOnboarding: false,
+      email: null,
+    };
   }
 
-  const onboardingStatus = await getAmbassadorOnboardingStatus({
+  const onboardingGrantContact = await getAmbassadorOnboardingGrantContact({
     applicationAirtableRecordId: latestApplication.airtable_record_id,
     applicationAirtablePayload: latestApplication.airtable_payload,
   });
 
-  return onboardingStatus.isOnboardingComplete;
+  return {
+    hasCompletedOnboarding: onboardingGrantContact.hasCompletedOnboarding,
+    email: onboardingGrantContact.hcbEmail,
+  };
 }
 
 async function findMatchingExistingGrant(input: {
@@ -346,7 +360,7 @@ async function listRetryablePendingGrantRows() {
            grants.amount_cents, grants.balance_cents, grants.balance_synced_at,
            grants.linked_at, grants.linked_by_user_id, grants.last_attempted_at,
            grants.next_retry_at, grants.last_error, grants.created_at, grants.updated_at,
-           users.email, users.display_name
+           users.display_name
     FROM user_hcb_grants grants
     JOIN users ON users.id = grants.user_id
     WHERE grants.provisioning_state = 'pending'
@@ -363,7 +377,7 @@ async function getRetryablePendingGrantRowForUser(userId: string) {
            grants.amount_cents, grants.balance_cents, grants.balance_synced_at,
            grants.linked_at, grants.linked_by_user_id, grants.last_attempted_at,
            grants.next_retry_at, grants.last_error, grants.created_at, grants.updated_at,
-           users.email, users.display_name
+           users.display_name
     FROM user_hcb_grants grants
     JOIN users ON users.id = grants.user_id
     WHERE grants.user_id = ${userId}
@@ -381,14 +395,16 @@ async function processPendingGrantRow(
   },
 ) {
   try {
-    if (!(await isEligibleForOfficeGrantProvisioning(row.user_id))) {
+    const provisioningTarget = await getOfficeGrantProvisioningTarget(row.user_id);
+
+    if (!provisioningTarget.hasCompletedOnboarding) {
       await setPendingGrantError(row.id, "User is not yet onboarded for office grant provisioning");
       return false;
     }
 
-    const email = row.email?.trim() ?? "";
+    const email = provisioningTarget.email?.trim() ?? "";
     if (email === "") {
-      await setPendingGrantError(row.id, "User does not have an email address to provision a grant");
+      await setPendingGrantError(row.id, "Completed onboarding record is missing hcb_email for grant provisioning");
       return false;
     }
 
@@ -398,10 +414,11 @@ async function processPendingGrantRow(
     });
 
     const grant = matchedGrant ?? await createHcbOrganizationCardGrant({
-      organizationId: HCB_AMBASSADOR_ORGANIZATION_ID,
+      organizationId: "org_lbu4gX",
       email,
-      amountCents: OFFICE_GRANT_AMOUNT_CENTS,
-      purpose: OFFICE_GRANT_PURPOSE,
+      amountCents: 2_000,
+      purpose: "Office grant!",
+      instructions: "Please ask if you are unsure about your purchase counting as an office expense, you may face consequences if it does not.",
     });
 
     assertValidOfficeGrant(grant, { email });
@@ -497,12 +514,12 @@ export async function queueEligibleOfficeGrants() {
   let queued = 0;
 
   for (const candidate of candidates) {
-    const onboardingStatus = await getAmbassadorOnboardingStatus({
+    const onboardingGrantContact = await getAmbassadorOnboardingGrantContact({
       applicationAirtableRecordId: candidate.airtable_record_id,
       applicationAirtablePayload: candidate.airtable_payload,
     });
 
-    if (!onboardingStatus.isOnboardingComplete) {
+    if (!onboardingGrantContact.hasCompletedOnboarding || onboardingGrantContact.hcbEmail === null) {
       continue;
     }
 
@@ -559,7 +576,7 @@ export async function processPendingOfficeGrants() {
   let existingGrants: HcbCardGrant[] = [];
 
   try {
-    existingGrants = await listHcbOrganizationCardGrants(HCB_AMBASSADOR_ORGANIZATION_ID);
+    existingGrants = await listHcbOrganizationCardGrants("org_lbu4gX");
   } catch (error) {
     const message = normalizeHcbError(error);
 
@@ -618,9 +635,15 @@ export async function linkOfficeGrantToUser(input: {
     throw new Error("User not found");
   }
 
+  const provisioningTarget = await getOfficeGrantProvisioningTarget(input.userId);
+  const expectedGrantEmail =
+    provisioningTarget.hasCompletedOnboarding && provisioningTarget.email !== null
+      ? provisioningTarget.email
+      : user.email;
+
   const grant = await validateManualGrantLink({
     grantId: input.grantId,
-    email: user.email,
+    email: expectedGrantEmail,
   });
 
   const conflictingUser = (await sql<Array<{ user_id: string }>>`
@@ -655,8 +678,8 @@ export async function linkOfficeGrantToUser(input: {
         ${input.userId},
         'pending',
         'manual',
-        ${OFFICE_GRANT_PURPOSE},
-        ${OFFICE_GRANT_AMOUNT_CENTS},
+        ${"Office grant!"},
+        ${2_000},
         NOW(),
         NOW()
       )
@@ -743,7 +766,7 @@ export async function requestOfficeGrantProvisioningForUser(
   let existingGrants: HcbCardGrant[] = [];
 
   try {
-    existingGrants = await listHcbOrganizationCardGrants(HCB_AMBASSADOR_ORGANIZATION_ID);
+    existingGrants = await listHcbOrganizationCardGrants("org_lbu4gX");
   } catch (error) {
     await setPendingGrantError(pendingGrant.id, normalizeHcbError(error));
     return "provision_failed";

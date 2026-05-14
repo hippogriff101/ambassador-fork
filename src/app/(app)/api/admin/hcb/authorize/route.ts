@@ -5,10 +5,6 @@ import { cookies } from "next/headers";
 import { isUserAdmin } from "@/lib/applications/review";
 import { ensureSchema } from "@/lib/database/ensure-schema";
 import { isProduction } from "@/lib/env";
-import {
-  HCB_OAUTH_STATE_COOKIE_MAX_AGE_SECONDS,
-  HCB_OAUTH_STATE_COOKIE_NAME,
-} from "@/lib/hcb/constants";
 import { getHcbAuthorizationUrl } from "@/lib/hcb/service";
 import { getAppUrl, isSameOriginRequest } from "@/lib/http";
 import { getActorSession } from "@/lib/session";
@@ -31,12 +27,12 @@ export async function POST(request: Request) {
   const state = randomUUID();
   const cookieStore = await cookies();
 
-  cookieStore.set(HCB_OAUTH_STATE_COOKIE_NAME, state, {
+  cookieStore.set("ambassador_hcb_oauth_state", state, {
     httpOnly: true,
     secure: isProduction(),
     sameSite: "lax",
     path: "/",
-    maxAge: HCB_OAUTH_STATE_COOKIE_MAX_AGE_SECONDS,
+    maxAge: 600,
   });
 
   return Response.redirect(getAppUrl(getHcbAuthorizationUrl(state), request), 303);

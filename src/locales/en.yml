@@ -216,6 +216,10 @@ shirt:
   labels:
     size: Size (US Sizing)
     shipping-address: Shipping address
+  stock:
+    left: "{count} left"
+    out: Out
+    none: Shirts are out of stock right now.
   no-address:
     body: You don't have a shipping address on file yet. Add one on Hack Club Auth, then come back here.
     cta: Add an address on Hack Club Auth
@@ -249,6 +253,7 @@ shirt:
     no-address: You need a shipping address on Hack Club Auth first.
     already-ordered: You've already ordered an ambassador shirt.
     invalid-size: Pick a valid size.
+    out-of-stock: Size {size} is out of stock right now.
 
 settings:
   metadata:

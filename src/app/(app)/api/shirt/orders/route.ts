@@ -15,6 +15,7 @@ import {
   SHIRT_SKU_PREFIX,
   shirtSku,
 } from "@/lib/shop";
+import { loadShirtStockBySize } from "@/lib/warehouse";
 
 type ShirtOrderUserRow = {
   id: string;
@@ -138,6 +139,17 @@ export async function POST(request: Request) {
   `).at(0) ?? null;
   if (latestOrder && !canPlaceAnotherShirtOrder(latestOrder.status)) {
     return Response.json({ error: "already_ordered" }, { status: 409 });
+  }
+
+  try {
+    const stockBySize = await loadShirtStockBySize();
+    const remainingStock = stockBySize[size];
+
+    if (remainingStock !== null && remainingStock <= 0) {
+      return Response.json({ error: "out_of_stock" }, { status: 409 });
+    }
+  } catch (error) {
+    console.error("[shirts] unable to verify live shirt stock", error);
   }
 
   const id = crypto.randomUUID();

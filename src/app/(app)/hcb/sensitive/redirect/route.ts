@@ -4,9 +4,6 @@ import { revalidatePath } from "next/cache";
 import { isUserAdmin } from "@/lib/applications/review";
 import { logAdminActionEvent } from "@/lib/admin-action-events";
 import { ensureSchema } from "@/lib/database/ensure-schema";
-import {
-  HCB_OAUTH_STATE_COOKIE_NAME,
-} from "@/lib/hcb/constants";
 import { saveHcbAuthorization } from "@/lib/hcb/service";
 import { getAppUrl } from "@/lib/http";
 import { getActorSession } from "@/lib/session";
@@ -22,9 +19,9 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code")?.trim() ?? "";
   const oauthError = url.searchParams.get("error")?.trim() ?? "";
   const cookieStore = await cookies();
-  const expectedState = cookieStore.get(HCB_OAUTH_STATE_COOKIE_NAME)?.value.trim() ?? "";
+  const expectedState = cookieStore.get("ambassador_hcb_oauth_state")?.value.trim() ?? "";
 
-  cookieStore.delete(HCB_OAUTH_STATE_COOKIE_NAME);
+  cookieStore.delete("ambassador_hcb_oauth_state");
 
   if (oauthError !== "") {
     return Response.redirect(getOrdersRedirectUrl(request, "denied"), 303);
