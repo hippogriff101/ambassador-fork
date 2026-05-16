@@ -1,8 +1,9 @@
 "use client";
 
 import Icon from "@hackclub/icons";
-import { ChevronDown, SwitchCamera, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, SwitchCamera, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -125,6 +126,7 @@ export function PostersClient({
   initialData: ClientPosterData;
 }) {
   const t = useTranslations("posters");
+  const router = useRouter();
   const data = initialData;
   const [campaignSlug, setCampaignSlug] = useState<string | null>(initialCampaignSlug);
   const [paperSize, setPaperSize] = useState<PaperSize>("letter");
@@ -174,8 +176,8 @@ export function PostersClient({
   }, [availableColors, colorMode]);
 
   const refresh = useCallback(async () => {
-    window.location.reload();
-  }, []);
+    router.refresh();
+  }, [router]);
 
   const createPoster = useCallback(async () => {
     if (campaignSlug === null) return;
@@ -246,44 +248,6 @@ export function PostersClient({
       await refresh();
     } catch {
       setError(t("errors.create-failed"));
-    } finally {
-      setBusy(false);
-    }
-  }, [refresh, t]);
-
-  const deletePoster = useCallback(async (poster: ClientPoster) => {
-    const label = poster.name ?? formatPosterCode(poster.referral_code);
-    if (!window.confirm(`Delete ${label} permanently?`)) return;
-    if (!window.confirm(`Double check: permanently delete ${label}? This cannot be undone.`)) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/posters/${poster.id}`, { method: "DELETE" });
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-      await refresh();
-    } catch {
-      setError(t("errors.load-failed"));
-    } finally {
-      setBusy(false);
-    }
-  }, [refresh, t]);
-
-  const deleteGroup = useCallback(async (group: ClientPosterGroup) => {
-    const label = group.name ?? t("groups.unnamed");
-    if (!window.confirm(`Delete ${label} and all posters in it permanently?`)) return;
-    if (!window.confirm(`Double check: permanently delete ${label}? This cannot be undone.`)) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/poster-groups/${group.id}`, { method: "DELETE" });
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-      await refresh();
-    } catch {
-      setError(t("errors.load-failed"));
     } finally {
       setBusy(false);
     }
@@ -398,8 +362,7 @@ export function PostersClient({
                   group={group}
                   busy={busy}
                   onAddPosters={(count) => addPostersToGroup(group.id, count)}
-                  onDeleteGroup={() => deleteGroup(group)}
-                  onDeletePoster={deletePoster}
+                  onPosterRenamed={refresh}
                 />
               ))}
             </div>
@@ -433,7 +396,7 @@ export function PostersClient({
                 <PosterRow
                   key={poster.id}
                   poster={poster}
-                  onDelete={() => deletePoster(poster)}
+                  onRenamed={refresh}
                 />
               ))}
             </ul>
@@ -467,14 +430,12 @@ function GroupCard({
   group,
   busy,
   onAddPosters,
-  onDeleteGroup,
-  onDeletePoster,
+  onPosterRenamed,
 }: {
   group: ClientPosterGroup;
   busy: boolean;
   onAddPosters: (count: number) => void;
-  onDeleteGroup: () => void;
-  onDeletePoster: (poster: ClientPoster) => void;
+  onPosterRenamed: () => void;
 }) {
   const t = useTranslations("posters");
   const [addCount, setAddCount] = useState(1);
@@ -519,16 +480,19 @@ function GroupCard({
             <span className="hidden sm:inline">Download group (ZIP)</span>
           </a>
           {canDeleteGroup ? (
-            <button
-              type="button"
-              data-slot="icon-link"
-              onClick={onDeleteGroup}
-              disabled={busy}
-              className="inline-flex shrink-0 items-center gap-1.5 bg-transparent p-0 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Trash2 size={16} />
-              Delete
-            </button>
+            <HoverHint message={t("actions.delete-disabled")}>
+              <button
+                type="button"
+                data-slot="icon-link"
+                onClick={(event) => event.preventDefault()}
+                aria-disabled
+                aria-label={t("actions.delete-disabled")}
+                className="inline-flex shrink-0 cursor-not-allowed items-center gap-1.5 bg-transparent p-0 text-sm text-muted-foreground opacity-50 transition-colors"
+              >
+                <Trash2 size={16} />
+                {t("actions.delete")}
+              </button>
+            </HoverHint>
           ) : null}
         </div>
       </div>
@@ -557,14 +521,76 @@ function GroupCard({
 
       <ul className="mt-4 space-y-0 border-l border-foreground/15">
         {group.posters.map((poster) => (
-          <PosterTreeItem key={poster.id} poster={poster} onDelete={() => onDeletePoster(poster)} />
+          <PosterTreeItem
+            key={poster.id}
+            poster={poster}
+            onRenamed={onPosterRenamed}
+          />
         ))}
       </ul>
     </div>
   );
 }
 
-function PosterTreeItem({ poster, onDelete }: { poster: ClientPoster; onDelete: () => void }) {
+function HoverHint({
+  message,
+  children,
+}: {
+  message: string;
+  children: React.ReactNode;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <span
+      className="relative inline-flex cursor-help"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <span
+          className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 !rounded-none px-3 py-2 font-body text-xs"
+          style={{ backgroundColor: "#000", color: "#fff" }}
+        >
+          {message}
+        </span>
+      )}
+    </span>
+  );
+}
+
+async function renamePosterRequest(posterId: string, name: string | null) {
+  const response = await fetch(`/api/posters/${posterId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+}
+
+function PosterTreeItem({
+  poster,
+  onRenamed,
+}: {
+  poster: ClientPoster;
+  onRenamed: () => void;
+}) {
+  const t = useTranslations("posters");
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(poster.name ?? "");
+  const [busy, setBusy] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
   const statusColor: Record<PosterVerificationStatus, string> = {
     pending: "text-accent",
     in_review: "text-accent",
@@ -577,51 +603,142 @@ function PosterTreeItem({ poster, onDelete }: { poster: ClientPoster; onDelete: 
   const displayCode = formatPosterCode(poster.referral_code);
   const title = poster.name ?? displayCode;
 
+  async function commitRename() {
+    const next = draftName.trim();
+    if (next === (poster.name ?? "")) {
+      setEditing(false);
+      setRowError(null);
+      return;
+    }
+    setBusy(true);
+    setRowError(null);
+    try {
+      await renamePosterRequest(poster.id, next === "" ? null : next);
+      setEditing(false);
+      onRenamed();
+    } catch {
+      setRowError(t("errors.rename-failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <li id={`poster-${poster.id}`} className="pl-4">
       <div className="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative min-w-0">
+        <div className="relative min-w-0 flex-1">
           <span
             className="absolute -left-4 top-2.5 h-px w-3 bg-foreground/15"
             aria-hidden
           />
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="truncate text-sm font-medium text-foreground">{title}</span>
-            {poster.name !== null ? (
-              <span className={cn("font-mono text-xs", statusColor[poster.verification_status])}>
-                {prefix}{displayCode}
-              </span>
-            ) : null}
-            {poster.scanCount > 0 ? (
-              <span className="text-xs text-muted-foreground">
-                {poster.scanCount} referral{poster.scanCount === 1 ? "" : "s"}
-              </span>
-            ) : null}
-          </div>
+          {editing ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                ref={inputRef}
+                type="text"
+                value={draftName}
+                onChange={(event) => setDraftName(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void commitRename();
+                  } else if (event.key === "Escape") {
+                    event.preventDefault();
+                    setEditing(false);
+                    setDraftName(poster.name ?? "");
+                    setRowError(null);
+                  }
+                }}
+                placeholder={t("actions.rename-placeholder")}
+                aria-label={t("actions.rename-poster", { code: displayCode })}
+                disabled={busy}
+                className="h-9 w-full max-w-sm"
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="app-sm"
+                  onClick={() => void commitRename()}
+                  disabled={busy}
+                >
+                  {t("actions.rename-save")}
+                </Button>
+                <button
+                  type="button"
+                  data-slot="icon-link"
+                  onClick={() => {
+                    setEditing(false);
+                    setDraftName(poster.name ?? "");
+                    setRowError(null);
+                  }}
+                  disabled={busy}
+                  className="bg-transparent px-2 py-1 text-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {t("actions.rename-cancel")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="truncate text-sm font-medium text-foreground">{title}</span>
+              {poster.name !== null ? (
+                <span className={cn("font-mono text-xs", statusColor[poster.verification_status])}>
+                  {prefix}{displayCode}
+                </span>
+              ) : null}
+              {poster.scanCount > 0 ? (
+                <span className="text-xs text-muted-foreground">
+                  {poster.scanCount} referral{poster.scanCount === 1 ? "" : "s"}
+                </span>
+              ) : null}
+            </div>
+          )}
+          {rowError !== null ? (
+            <p className="mt-1 text-xs text-primary">{rowError}</p>
+          ) : null}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <a
-            href={`/api/posters/${poster.id}/pdf`}
-            data-slot="icon-link"
-            className="inline-flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
-            aria-label={`Download poster ${displayCode}`}
-            title={`Download poster ${displayCode}`}
-          >
-            <Icon glyph="download" size={17} />
-          </a>
-          {canDeletePoster(poster) ? (
+
+        {!editing && (
+          <div className="flex shrink-0 items-center gap-2">
+            <a
+              href={`/api/posters/${poster.id}/pdf`}
+              data-slot="icon-link"
+              className="inline-flex size-7 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={`Download poster ${displayCode}`}
+              title={`Download poster ${displayCode}`}
+            >
+              <Icon glyph="download" size={17} />
+            </a>
             <button
               type="button"
               data-slot="icon-link"
-              onClick={onDelete}
-              className="inline-flex size-7 cursor-pointer items-center justify-center bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label={`Delete poster ${displayCode}`}
-              title={`Delete poster ${displayCode}`}
+              onClick={() => {
+                setDraftName(poster.name ?? "");
+                setEditing(true);
+                setRowError(null);
+              }}
+              className="inline-flex size-7 items-center justify-center bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={t("actions.rename-poster", { code: displayCode })}
+              title={t("actions.rename-poster", { code: displayCode })}
             >
-              <Trash2 size={17} strokeWidth={2} />
+              <Pencil size={16} />
             </button>
-          ) : null}
-        </div>
+            {canDeletePoster(poster) ? (
+              <HoverHint message={t("actions.delete-disabled")}>
+                <button
+                  type="button"
+                  data-slot="icon-link"
+                  onClick={(event) => event.preventDefault()}
+                  aria-disabled
+                  className="inline-flex size-7 cursor-not-allowed items-center justify-center bg-transparent p-0 text-muted-foreground opacity-50 transition-colors"
+                  aria-label={t("actions.delete-disabled")}
+                >
+                  <Trash2 size={17} strokeWidth={2} />
+                </button>
+              </HoverHint>
+            ) : null}
+          </div>
+        )}
       </div>
     </li>
   );
@@ -629,12 +746,25 @@ function PosterTreeItem({ poster, onDelete }: { poster: ClientPoster; onDelete: 
 
 function PosterRow({
   poster,
-  onDelete,
+  onRenamed,
 }: {
   poster: ClientPoster;
-  onDelete: () => void;
+  onRenamed: () => void;
 }) {
   const t = useTranslations("posters");
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(poster.name ?? "");
+  const [busy, setBusy] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
   const statusColor: Record<PosterVerificationStatus, string> = {
     pending: "text-accent",
     in_review: "text-accent",
@@ -645,43 +775,139 @@ function PosterRow({
   const displayCode = formatPosterCode(poster.referral_code);
   const title = poster.name ?? displayCode;
 
+  async function commitRename() {
+    const next = draftName.trim();
+    if (next === (poster.name ?? "")) {
+      setEditing(false);
+      setRowError(null);
+      return;
+    }
+    setBusy(true);
+    setRowError(null);
+    try {
+      await renamePosterRequest(poster.id, next === "" ? null : next);
+      setEditing(false);
+      onRenamed();
+    } catch {
+      setRowError(t("errors.rename-failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <li id={`poster-${poster.id}`} className="flex items-center justify-between gap-3 px-4 py-3">
-      <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
-        <span className="truncate text-sm font-medium text-foreground">{title}</span>
-        {poster.name !== null ? (
-          <span className="font-mono text-xs text-muted-foreground">{displayCode}</span>
-        ) : null}
-        <span className={cn("text-xs", statusColor[poster.verification_status])}>
-          {t(`status.${poster.verification_status}`)}
-        </span>
-        {poster.scanCount > 0 ? (
-          <span className="text-xs text-muted-foreground">
-            {poster.scanCount} referral{poster.scanCount === 1 ? "" : "s"}
-          </span>
+      <div className="min-w-0 flex-1">
+        {editing ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              ref={inputRef}
+              type="text"
+              value={draftName}
+              onChange={(event) => setDraftName(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void commitRename();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  setEditing(false);
+                  setDraftName(poster.name ?? "");
+                  setRowError(null);
+                }
+              }}
+              placeholder={t("actions.rename-placeholder")}
+              aria-label={t("actions.rename-poster", { code: displayCode })}
+              disabled={busy}
+              className="h-9 w-full max-w-sm"
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="app-sm"
+                onClick={() => void commitRename()}
+                disabled={busy}
+              >
+                {t("actions.rename-save")}
+              </Button>
+              <button
+                type="button"
+                data-slot="icon-link"
+                onClick={() => {
+                  setEditing(false);
+                  setDraftName(poster.name ?? "");
+                  setRowError(null);
+                }}
+                disabled={busy}
+                className="bg-transparent px-2 py-1 text-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t("actions.rename-cancel")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
+            <span className="truncate text-sm font-medium text-foreground">{title}</span>
+            {poster.name !== null ? (
+              <span className="font-mono text-xs text-muted-foreground">{displayCode}</span>
+            ) : null}
+            <span className={cn("text-xs", statusColor[poster.verification_status])}>
+              {t(`status.${poster.verification_status}`)}
+            </span>
+            {poster.scanCount > 0 ? (
+              <span className="text-xs text-muted-foreground">
+                {poster.scanCount} referral{poster.scanCount === 1 ? "" : "s"}
+              </span>
+            ) : null}
+          </div>
+        )}
+        {rowError !== null ? (
+          <p className="mt-1 text-xs text-primary">{rowError}</p>
         ) : null}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <a
-          href={`/api/posters/${poster.id}/pdf`}
-          data-slot="icon-link"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Icon glyph="download" size={20} />
-          {t("actions.download")}
-        </a>
-        {canDeletePoster(poster) ? (
+
+      {!editing && (
+        <div className="flex shrink-0 items-center gap-2">
+          <a
+            href={`/api/posters/${poster.id}/pdf`}
+            data-slot="icon-link"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Icon glyph="download" size={20} />
+            {t("actions.download")}
+          </a>
           <button
             type="button"
             data-slot="icon-link"
-            onClick={onDelete}
-            className="inline-flex cursor-pointer items-center gap-1.5 bg-transparent p-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => {
+              setDraftName(poster.name ?? "");
+              setEditing(true);
+              setRowError(null);
+            }}
+            className="inline-flex items-center gap-1.5 bg-transparent p-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            aria-label={t("actions.rename-poster", { code: displayCode })}
+            title={t("actions.rename-poster", { code: displayCode })}
           >
-            <Trash2 size={16} />
-            Delete
+            <Pencil size={16} />
+            {t("actions.rename")}
           </button>
-        ) : null}
-      </div>
+          {canDeletePoster(poster) ? (
+            <HoverHint message={t("actions.delete-disabled")}>
+              <button
+                type="button"
+                data-slot="icon-link"
+                onClick={(event) => event.preventDefault()}
+                aria-disabled
+                aria-label={t("actions.delete-disabled")}
+                className="inline-flex cursor-not-allowed items-center gap-1.5 bg-transparent p-0 text-sm text-muted-foreground opacity-50 transition-colors"
+              >
+                <Trash2 size={16} />
+                {t("actions.delete")}
+              </button>
+            </HoverHint>
+          ) : null}
+        </div>
+      )}
     </li>
   );
 }

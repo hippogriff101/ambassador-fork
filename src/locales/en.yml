@@ -180,6 +180,14 @@ posters:
     choose-file: Upload from device
     retake: Retake
     refresh-location: Refresh location
+    delete: Delete
+    delete-poster: "Delete poster {code}"
+    delete-disabled: Until referrals start syncing, we will not be allowing any poster deletions
+    rename: Rename
+    rename-poster: "Rename poster {code}"
+    rename-save: Save
+    rename-cancel: Cancel
+    rename-placeholder: Poster name
   groups:
     title: Poster groups
     empty: No groups yet. Create one to bundle multiple posters.
@@ -227,6 +235,7 @@ posters:
     invalid-image-format: Unsupported image format. Use {formats}.
     geolocation-unavailable: Your browser does not support geolocation.
     geolocation-denied: Precise location access was denied. Please enable it in your browser settings.
+    rename-failed: Could not rename poster.
 
 referrals:
   metadata:

@@ -248,7 +248,7 @@ export async function listUserPosterGroups(userId: string) {
     SELECT *
     FROM poster_groups
     WHERE user_id = ${userId}
-    ORDER BY created_at DESC
+    ORDER BY created_at DESC, id DESC
   `;
 }
 
@@ -257,7 +257,7 @@ export async function listUserPosters(userId: string) {
     SELECT *
     FROM posters
     WHERE user_id = ${userId}
-    ORDER BY created_at DESC
+    ORDER BY created_at DESC, id DESC
   `;
 }
 
@@ -331,7 +331,7 @@ export async function getGroupPosters(groupId: string) {
     SELECT *
     FROM posters
     WHERE poster_group_id = ${groupId}
-    ORDER BY created_at ASC
+    ORDER BY created_at ASC, id ASC
   `;
 }
 

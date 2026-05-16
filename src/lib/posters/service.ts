@@ -60,8 +60,16 @@ function requirePosterName(value: string | null | undefined, label: string) {
   return name;
 }
 
+function getPosterMetadataObject(poster: PosterRow): Record<string, unknown> {
+  const value = poster.metadata as unknown;
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
 function getPosterName(poster: PosterRow) {
-  const name = poster.metadata.name;
+  const name = getPosterMetadataObject(poster).name;
   return typeof name === "string" && name.trim() !== "" ? name : null;
 }
 
@@ -100,6 +108,7 @@ async function persistPosterDecision(input: {
       detectedQrCodes: input.detectedQrCodes,
       verificationStatus: input.verificationStatus,
       metadata: {
+        ...getPosterMetadataObject(input.poster),
         detected_qr_codes: input.detectedQrCodes,
         ...input.metadata,
       },
@@ -243,6 +252,23 @@ export async function addPostersToGroupForUser(input: {
     count,
     posterType: posters[0]?.poster_type ?? "color",
   });
+}
+
+export async function renamePosterForUser(
+  userId: string,
+  posterId: string,
+  name: string | null,
+) {
+  const poster = await getPosterForUserOrThrow(userId, posterId);
+  const normalized = normalizePosterName(name);
+  const metadata: Record<string, unknown> = { ...getPosterMetadataObject(poster) };
+  if (normalized === null) {
+    delete metadata.name;
+  } else {
+    metadata.name = normalized;
+  }
+  const updated = await updatePosterMetadata(poster.id, metadata);
+  return { poster: toClientPoster(updated) };
 }
 
 export async function deletePosterForUser(userId: string, posterId: string) {
@@ -405,6 +431,7 @@ export async function submitPosterProof(input: SubmitPosterProofInput): Promise<
     });
 
     await updatePosterMetadata(poster.id, {
+      ...getPosterMetadataObject(poster),
       proof_transferred_to_poster_id: matchedPoster.id,
       auto_match_transfer_at: new Date().toISOString(),
       detected_qr_codes: detectedQrCodes,
