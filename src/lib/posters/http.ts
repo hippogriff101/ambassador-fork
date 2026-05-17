@@ -37,6 +37,8 @@ export async function requirePosterSession() {
     !canAccessPosters({
       latestApplicationStatus: user.latest_application_status ?? null,
       manualDashboardState: user.manual_dashboard_state ?? null,
+      isOnboardingComplete: user.is_onboarding_complete,
+      isAdmin: Boolean(session.impersonator) || Boolean(user.is_admin ?? session.isAdmin),
     })
   ) {
     throw new PosterRequestError("Forbidden", 403);

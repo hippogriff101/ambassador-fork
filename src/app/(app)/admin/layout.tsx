@@ -23,10 +23,14 @@ export default async function AdminLayout({
   const showPostersLink = safeguards.postersEnabled && canAccessPosters({
     latestApplicationStatus: user.latest_application_status ?? null,
     manualDashboardState: user.manual_dashboard_state ?? null,
+    isOnboardingComplete: user.is_onboarding_complete,
+    isAdmin: true,
   });
   const showReferralsLink = safeguards.referralsEnabled && canAccessStardanceReferrals({
     latestApplicationStatus: user.latest_application_status ?? null,
     manualDashboardState: user.manual_dashboard_state ?? null,
+    isOnboardingComplete: user.is_onboarding_complete,
+    isAdmin: true,
   });
 
   return (

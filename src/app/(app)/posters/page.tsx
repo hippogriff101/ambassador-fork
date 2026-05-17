@@ -32,6 +32,8 @@ export default async function PostersPage() {
   const canUsePosters = canAccessPosters({
     latestApplicationStatus: user?.latest_application_status ?? null,
     manualDashboardState: user?.manual_dashboard_state ?? null,
+    isOnboardingComplete: user?.is_onboarding_complete ?? false,
+    isAdmin: canAccessAdmin,
   });
 
   if (!canUsePosters || !safeguards.postersEnabled || user === null) {
@@ -41,6 +43,8 @@ export default async function PostersPage() {
   const showReferralsLink = safeguards.referralsEnabled && canAccessStardanceReferrals({
     latestApplicationStatus: user?.latest_application_status ?? null,
     manualDashboardState: user?.manual_dashboard_state ?? null,
+    isOnboardingComplete: user?.is_onboarding_complete ?? false,
+    isAdmin: canAccessAdmin,
   });
 
   const data = await listPosterDataForUser(session.sub);

@@ -59,10 +59,14 @@ export default async function SettingsPage() {
   const showPostersLink = safeguards.postersEnabled && posterAccessState !== null && canAccessPosters({
     latestApplicationStatus: posterAccessState.latest_application_status,
     manualDashboardState: posterAccessState.manual_dashboard_state,
+    isOnboardingComplete: posterAccessState.is_onboarding_complete,
+    isAdmin: canAccessAdmin,
   });
   const showReferralsLink = safeguards.referralsEnabled && posterAccessState !== null && canAccessStardanceReferrals({
     latestApplicationStatus: posterAccessState.latest_application_status,
     manualDashboardState: posterAccessState.manual_dashboard_state,
+    isOnboardingComplete: posterAccessState.is_onboarding_complete,
+    isAdmin: canAccessAdmin,
   });
 
   return (

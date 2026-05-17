@@ -246,10 +246,14 @@ export default async function DashboardPage({
         showPostersLink={safeguards.postersEnabled && canAccessPosters({
           latestApplicationStatus: application?.status ?? null,
           manualDashboardState: user.manual_dashboard_state,
+          isOnboardingComplete: shirtOnboardingStatus.isOnboardingComplete,
+          isAdmin: canAccessAdmin,
         })}
         showReferralsLink={safeguards.referralsEnabled && canAccessStardanceReferrals({
           latestApplicationStatus: application?.status ?? null,
           manualDashboardState: user.manual_dashboard_state,
+          isOnboardingComplete: shirtOnboardingStatus.isOnboardingComplete,
+          isAdmin: canAccessAdmin,
         })}
       />
       <div className="mx-auto max-w-3xl px-6 py-12">

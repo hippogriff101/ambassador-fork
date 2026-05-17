@@ -1,10 +1,9 @@
 import "server-only";
 
-import { isAcceptedApplicationStatus } from "@/lib/applications/status";
 import sql from "@/lib/database/client";
 import { optionalEnv } from "@/lib/env";
+import { hasApprovedAmbassadorStatus } from "@/lib/posters/access";
 import { ensurePosterNameColumn } from "@/lib/posters/repository";
-import { isUserManualDashboardState } from "@/lib/user-dashboard-state";
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 const CODE_LENGTH = 5;
@@ -135,15 +134,14 @@ async function ensureLowercaseReferralCodes() {
 export function canAccessStardanceReferrals(input: {
   latestApplicationStatus?: string | null;
   manualDashboardState?: string | null;
+  isOnboardingComplete?: boolean;
+  isAdmin?: boolean;
 } | null | undefined) {
-  const manualDashboardState = isUserManualDashboardState(input?.manualDashboardState)
-    ? input.manualDashboardState
-    : null;
+  if (input?.isAdmin === true) {
+    return true;
+  }
 
-  return (
-    manualDashboardState === "approved" ||
-    isAcceptedApplicationStatus(input?.latestApplicationStatus)
-  );
+  return hasApprovedAmbassadorStatus(input) && input?.isOnboardingComplete === true;
 }
 
 export function buildStardanceReferralUrl(code: string) {

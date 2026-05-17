@@ -4,9 +4,8 @@ import { getTranslations } from "next-intl/server";
 
 import { Navbar } from "@/components/navbar";
 import { getTranslatedPageMetadata } from "@/i18n/metadata";
-import sql from "@/lib/database/client";
 import { ensureSchema } from "@/lib/database/ensure-schema";
-import { canAccessPosters } from "@/lib/posters/access";
+import { canAccessPosters, getPosterAccessState } from "@/lib/posters/access";
 import { getEffectiveSafeguards } from "@/lib/safeguards";
 import { getSession } from "@/lib/session";
 import {
@@ -18,13 +17,6 @@ import {
 } from "@/lib/stardance-referrals";
 
 import { ReferralsClient } from "./ReferralsClient";
-
-type ReferralsAccessRow = {
-  balance_cents: number | null;
-  is_admin: boolean | null;
-  manual_dashboard_state: string | null;
-  latest_application_status: string | null;
-};
 
 export async function generateMetadata(): Promise<Metadata> {
   return getTranslatedPageMetadata("referrals.metadata.title");
@@ -40,39 +32,28 @@ export default async function ReferralsPage() {
     getEffectiveSafeguards(session.sub),
   ]);
 
-  const user = (await sql<ReferralsAccessRow[]>`
-    SELECT
-      balance_cents,
-      is_admin,
-      manual_dashboard_state,
-      (
-        SELECT status
-        FROM applications
-        WHERE user_id = users.id
-        ORDER BY created_at DESC, id DESC
-        LIMIT 1
-      ) AS latest_application_status
-    FROM users
-    WHERE id = ${session.sub}
-    LIMIT 1
-  `).at(0) ?? null;
+  const user = await getPosterAccessState(session.sub);
+  const canAccessAdmin =
+    Boolean(session.impersonator) || Boolean(user?.is_admin ?? session.isAdmin);
 
   const canUseReferrals = canAccessStardanceReferrals({
     latestApplicationStatus: user?.latest_application_status ?? null,
     manualDashboardState: user?.manual_dashboard_state ?? null,
+    isOnboardingComplete: user?.is_onboarding_complete ?? false,
+    isAdmin: canAccessAdmin,
   });
 
-  if (!canUseReferrals || !safeguards.referralsEnabled) {
+  if (user === null || !canUseReferrals || !safeguards.referralsEnabled) {
     forbidden();
   }
 
-  const canAccessAdmin =
-    Boolean(session.impersonator) || Boolean(user?.is_admin ?? session.isAdmin);
   const showPostersLink =
     safeguards.postersEnabled &&
     canAccessPosters({
       latestApplicationStatus: user?.latest_application_status ?? null,
       manualDashboardState: user?.manual_dashboard_state ?? null,
+      isOnboardingComplete: user?.is_onboarding_complete ?? false,
+      isAdmin: canAccessAdmin,
     });
 
   const referralCodes = await listStardanceReferralCodesForUser(session.sub);

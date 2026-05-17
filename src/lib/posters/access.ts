@@ -1,4 +1,5 @@
 import sql from "@/lib/database/client";
+import { getAmbassadorOnboardingStatus } from "@/lib/ambassadors/airtable";
 import { isAcceptedApplicationStatus } from "@/lib/applications/status";
 import { isUserManualDashboardState } from "@/lib/user-dashboard-state";
 
@@ -7,27 +8,55 @@ export type PosterAccessState = {
   is_admin?: boolean | null;
   manual_dashboard_state?: string | null;
   latest_application_status?: string | null;
+  latest_application_airtable_record_id?: string | null;
+  latest_application_airtable_payload?: unknown;
+  is_onboarding_complete: boolean;
 };
 
 export async function getPosterAccessState(userId: string): Promise<PosterAccessState | null> {
-  const user = (await sql<PosterAccessState[]>`
-    SELECT balance_cents, is_admin, manual_dashboard_state,
-           (
-             SELECT status
-             FROM applications
-             WHERE user_id = users.id
-             ORDER BY created_at DESC, id DESC
-             LIMIT 1
-           ) AS latest_application_status
+  const user = (await sql<Omit<PosterAccessState, "is_onboarding_complete">[]>`
+    SELECT
+      users.balance_cents,
+      users.is_admin,
+      users.manual_dashboard_state,
+      latest_application.status AS latest_application_status,
+      latest_application.airtable_record_id AS latest_application_airtable_record_id,
+      latest_application.airtable_payload AS latest_application_airtable_payload
     FROM users
-    WHERE id = ${userId}
+    LEFT JOIN LATERAL (
+      SELECT status, airtable_record_id, airtable_payload
+      FROM applications
+      WHERE user_id = users.id
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1
+    ) latest_application ON true
+    WHERE users.id = ${userId}
     LIMIT 1
   `).at(0) ?? null;
 
-  return user;
+  if (user === null) {
+    return null;
+  }
+
+  if (!hasApprovedAmbassadorStatus({
+    latestApplicationStatus: user.latest_application_status ?? null,
+    manualDashboardState: user.manual_dashboard_state ?? null,
+  })) {
+    return { ...user, is_onboarding_complete: false };
+  }
+
+  const onboardingStatus = await getAmbassadorOnboardingStatus({
+    applicationAirtableRecordId: user.latest_application_airtable_record_id ?? null,
+    applicationAirtablePayload: user.latest_application_airtable_payload ?? null,
+  });
+
+  return {
+    ...user,
+    is_onboarding_complete: onboardingStatus.isOnboardingComplete,
+  };
 }
 
-export function canAccessPosters(input: {
+export function hasApprovedAmbassadorStatus(input: {
   latestApplicationStatus?: string | null;
   manualDashboardState?: string | null;
 } | null | undefined) {
@@ -39,4 +68,17 @@ export function canAccessPosters(input: {
     manualDashboardState === "approved" ||
     isAcceptedApplicationStatus(input?.latestApplicationStatus)
   );
+}
+
+export function canAccessPosters(input: {
+  latestApplicationStatus?: string | null;
+  manualDashboardState?: string | null;
+  isOnboardingComplete?: boolean;
+  isAdmin?: boolean;
+} | null | undefined) {
+  if (input?.isAdmin === true) {
+    return true;
+  }
+
+  return hasApprovedAmbassadorStatus(input) && input?.isOnboardingComplete === true;
 }

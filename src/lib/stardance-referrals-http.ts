@@ -1,15 +1,10 @@
 import "server-only";
 
 import { ensureSchema } from "@/lib/database/ensure-schema";
-import sql from "@/lib/database/client";
+import { getPosterAccessState } from "@/lib/posters/access";
 import { getSafeguards } from "@/lib/safeguards";
 import { getSession } from "@/lib/session";
 import { canAccessStardanceReferrals } from "@/lib/stardance-referrals";
-
-type StardanceReferralAccessRow = {
-  manual_dashboard_state: string | null;
-  latest_application_status: string | null;
-};
 
 export class StardanceReferralRequestError extends Error {
   constructor(
@@ -21,23 +16,6 @@ export class StardanceReferralRequestError extends Error {
   }
 }
 
-async function getStardanceReferralAccessState(userId: string) {
-  return (await sql<StardanceReferralAccessRow[]>`
-    SELECT
-      manual_dashboard_state,
-      (
-        SELECT status
-        FROM applications
-        WHERE user_id = users.id
-        ORDER BY created_at DESC, id DESC
-        LIMIT 1
-      ) AS latest_application_status
-    FROM users
-    WHERE id = ${userId}
-    LIMIT 1
-  `).at(0) ?? null;
-}
-
 export async function requireStardanceReferralSession() {
   const session = await getSession();
 
@@ -47,7 +25,7 @@ export async function requireStardanceReferralSession() {
 
   await ensureSchema();
   const [user, safeguards] = await Promise.all([
-    getStardanceReferralAccessState(session.sub),
+    getPosterAccessState(session.sub),
     getSafeguards(),
   ]);
 
@@ -56,6 +34,8 @@ export async function requireStardanceReferralSession() {
     !canAccessStardanceReferrals({
       latestApplicationStatus: user.latest_application_status ?? null,
       manualDashboardState: user.manual_dashboard_state ?? null,
+      isOnboardingComplete: user.is_onboarding_complete,
+      isAdmin: Boolean(session.impersonator) || Boolean(user.is_admin ?? session.isAdmin),
     })
   ) {
     throw new StardanceReferralRequestError("Forbidden", 403);
