@@ -679,16 +679,18 @@ function OnboardingPromptBanner({
         <span className="font-bold text-[var(--primary)]">
           {t("dashboard.onboarding.title")}
         </span>{" "}
-        {t("dashboard.onboarding.body")}{" "}
+        {t("dashboard.onboarding.body-prefix")}{" "}
         <a
           href={onboardingFormUrl}
           target="_blank"
           rel="noreferrer"
           aria-label={t("dashboard.onboarding.cta")}
-          className="ui-open-link ml-1 inline-flex"
+          className="inline-flex items-center gap-1 font-bold text-[var(--primary)] underline decoration-current decoration-2 underline-offset-4 transition-colors hover:text-[var(--acceptance)] focus-visible:text-[var(--acceptance)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--acceptance)]/30"
         >
-          ↗
-        </a>
+          {t("dashboard.onboarding.body-link")}
+          <Icon glyph="external" size={18} aria-hidden />
+        </a>{" "}
+        {t("dashboard.onboarding.body-suffix")}
       </p>
     </section>
   );
