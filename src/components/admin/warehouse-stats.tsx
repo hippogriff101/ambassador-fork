@@ -13,7 +13,7 @@ type WarehouseStatsData = {
     postage: number;
     total: number;
   };
-  completedOrders: number;
+  sentOrders: number;
   stockBySize: ShirtStockBySize;
 };
 
@@ -29,7 +29,7 @@ function isWarehouseStatsData(value: unknown): value is WarehouseStatsData {
   }
 
   const expenditure = Reflect.get(value, "expenditure");
-  const completedOrders = Reflect.get(value, "completedOrders");
+  const sentOrders = Reflect.get(value, "sentOrders");
   const stockBySize = Reflect.get(value, "stockBySize");
 
   return (
@@ -39,7 +39,7 @@ function isWarehouseStatsData(value: unknown): value is WarehouseStatsData {
     typeof Reflect.get(expenditure, "labor") === "number" &&
     typeof Reflect.get(expenditure, "postage") === "number" &&
     typeof Reflect.get(expenditure, "total") === "number" &&
-    typeof completedOrders === "number" &&
+    typeof sentOrders === "number" &&
     typeof stockBySize === "object" &&
     stockBySize !== null &&
     SHIRT_SIZES.every((size) => {
@@ -137,7 +137,7 @@ export function WarehouseStats({ locale }: { locale: string }) {
             ))}
           </div>
           <p className="font-body text-xs text-white/50">
-            {t("completed-orders", { count: data.completedOrders })}
+            {t("sent-orders", { count: data.sentOrders })}
           </p>
         </div>
 

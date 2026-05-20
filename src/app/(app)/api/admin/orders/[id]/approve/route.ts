@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { clearCachedWarehouseStats } from "@/lib/admin/warehouse-stats-cache";
 import {
   isUserAdmin,
   setLatestApplicationTshirtSentForUser,
@@ -180,6 +181,7 @@ export async function POST(
     }
   }
 
+  clearCachedWarehouseStats();
   revalidatePath(`/admin/orders/${id}`);
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/users/${order.user_id}`);

@@ -599,16 +599,16 @@ admin:
     view-order: View order
     warehouse:
       crunching: Crunching numbers...
-      empty: No completed orders yet.
+      empty: No sent warehouse orders yet.
       stock-label: Shirt stock
       stock-left: "{count} left"
       stock-out: Out
       stock-unavailable: Unavailable
-      expenditure-label: Total expenditure (completed)
+      expenditure-label: Total expenditure (sent to warehouse)
       contents: Contents
       labor: Labor
       postage: Postage
-      completed-orders: "Based on {count} completed warehouse orders"
+      sent-orders: "Based on {count} sent warehouse orders"
     columns:
       user: User
       item: Item

@@ -1,27 +1,27 @@
 import { isUserAdmin } from "@/lib/applications/review";
+import {
+  getCachedWarehouseStats,
+  setCachedWarehouseStats,
+  type CachedWarehouseStats,
+} from "@/lib/admin/warehouse-stats-cache";
 import sql from "@/lib/database/client";
 import { ensureSchema } from "@/lib/database/ensure-schema";
 import { isSameOriginRequest } from "@/lib/http";
 import { getActorSession } from "@/lib/session";
-import { buildEmptyShirtStockBySize, type ShirtStockBySize } from "@/lib/shop";
+import { buildEmptyShirtStockBySize, shirtSku } from "@/lib/shop";
 import { loadShirtStockBySize, WarehouseApiClient } from "@/lib/warehouse";
 
 type LinkedOrderRow = {
   warehouse_order_id: string;
 };
 
-type CachedStats = {
-  expenditure: {
-    contents: number;
-    labor: number;
-    postage: number;
-    total: number;
-  };
-  completedOrders: number;
-  stockBySize: ShirtStockBySize;
-};
-
-let cached: { data: CachedStats; expiresAt: number } | null = null;
+const SENT_TO_WAREHOUSE_STATUSES = new Set(["dispatched", "mailed"]);
+const AMBASSADOR_SHIRT_SKUS = [
+  shirtSku("S"),
+  shirtSku("M"),
+  shirtSku("L"),
+  shirtSku("XL"),
+] as const;
 
 export async function GET(request: Request) {
   if (!isSameOriginRequest(request)) {
@@ -38,8 +38,9 @@ export async function GET(request: Request) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
 
-  if (cached !== null && Date.now() < cached.expiresAt) {
-    return Response.json(cached.data);
+  const cachedStats = getCachedWarehouseStats();
+  if (cachedStats !== null) {
+    return Response.json(cachedStats);
   }
 
   const [warehouseOrders, linkedOrderRows, stockBySize] = await Promise.all([
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
       SELECT warehouse_order_id
       FROM orders
       WHERE warehouse_order_id IS NOT NULL
+        AND sku = ANY(${AMBASSADOR_SHIRT_SKUS}::text[])
     `,
     loadShirtStockBySize().catch(() => buildEmptyShirtStockBySize()),
   ]);
@@ -59,29 +61,29 @@ export async function GET(request: Request) {
   let contentsCost = 0;
   let laborCost = 0;
   let postageCost = 0;
-  let completedCount = 0;
+  let sentCount = 0;
 
   for (const order of warehouseOrders) {
-    if (order.status === "mailed" && ambassadorOrderIds.has(order.id)) {
+    if (SENT_TO_WAREHOUSE_STATUSES.has(order.status) && ambassadorOrderIds.has(order.id)) {
       contentsCost += Number(order.contents_cost ?? 0);
       laborCost += Number(order.labor_cost ?? 0);
       postageCost += Number(order.postage_cost ?? 0);
-      completedCount++;
+      sentCount++;
     }
   }
 
-  const data: CachedStats = {
+  const data: CachedWarehouseStats = {
     expenditure: {
       contents: contentsCost,
       labor: laborCost,
       postage: postageCost,
       total: contentsCost + laborCost + postageCost,
     },
-    completedOrders: completedCount,
+    sentOrders: sentCount,
     stockBySize,
   };
 
-  cached = { data, expiresAt: Date.now() + 5 * 60 * 1000 };
+  setCachedWarehouseStats(data);
 
   return Response.json(data);
 }
