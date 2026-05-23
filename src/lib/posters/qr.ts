@@ -109,7 +109,7 @@ function normalizeQrValue(value: string) {
 
 export function findMatchingPoster(detectedCodes: string[], posters: PosterRow[]) {
   return posters.find((poster) => {
-    const posterUrl = normalizeQrValue(buildPosterScanUrl(poster.qr_code_token));
+    const posterUrl = normalizeQrValue(buildPosterScanUrl(poster.referral_code));
     const legacyPosterUrl = normalizeQrValue(buildPosterReferralUrl(poster.referral_code));
     const posterCode = poster.referral_code.toLowerCase();
     const displayCode = formatPosterReferralCode(poster.referral_code).toLowerCase();

@@ -216,8 +216,8 @@ export function buildPosterReferralUrl(referralCode: string) {
   return `${optionalEnv("CURRENT_DOMAIN") ?? DEFAULT_CURRENT_DOMAIN}/p/${encodeURIComponent(formatPosterReferralCode(referralCode))}`;
 }
 
-export function buildPosterScanUrl(qrCodeToken: string) {
-  return `${optionalEnv("CURRENT_DOMAIN") ?? DEFAULT_CURRENT_DOMAIN}/p/${encodeURIComponent(qrCodeToken)}`;
+export function buildPosterScanUrl(referralCode: string) {
+  return `https://stardance.space/${formatPosterReferralCode(referralCode)}`;
 }
 
 export type PosterRegionInfo = {
@@ -347,14 +347,6 @@ export function listPosterCampaigns(): PosterCampaignSummary[] {
   return [...seen.values()].sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
-export function buildPosterRedirectUrl(referralCode: string, campaignSlug: string) {
-  const config = readPosterCampaignConfig(normalizeCampaignSlug(campaignSlug));
-  const target = new URL(
-    config.redirectBaseUrl ??
-      optionalEnv("POSTER_REDIRECT_BASE_URL") ??
-      optionalEnv("CURRENT_DOMAIN") ??
-      DEFAULT_CURRENT_DOMAIN,
-  );
-  target.searchParams.set("ref", normalizePosterReferralCode(referralCode));
-  return target.toString();
+export function buildPosterRedirectUrl(referralCode: string, _campaignSlug: string) {
+  return `https://stardance.space/${formatPosterReferralCode(referralCode)}`;
 }

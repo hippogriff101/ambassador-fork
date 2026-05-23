@@ -3,6 +3,7 @@ import { checkRateLimit, getIpRateLimitKey, rateLimitResponse } from "@/lib/rate
 
 export const runtime = "nodejs";
 
+// NEVER EVER EVER EVER EVER EVER EVER REMOVE THIS EVEN BY ACCIDENT!!!!!!!!!!!
 export async function GET(request: Request, context: RouteContext<"/p/[code]">) {
   const rateLimit = await checkRateLimit({
     scope: "poster-redirect",

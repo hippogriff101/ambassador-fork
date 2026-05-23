@@ -365,7 +365,7 @@ export async function getPosterPdfForUser(userId: string, posterId: string) {
     pdf: await generatePosterPdf({
       campaignSlug: poster.campaign_slug,
       style: poster.poster_type,
-      content: buildPosterScanUrl(poster.qr_code_token),
+      content: buildPosterScanUrl(poster.referral_code),
       referralCode: poster.referral_code,
     }),
   };
@@ -388,7 +388,7 @@ async function generatePosterZip(posters: PosterRow[]) {
       const bytes = await generatePosterPdf({
         campaignSlug: poster.campaign_slug,
         style: poster.poster_type,
-        content: buildPosterScanUrl(poster.qr_code_token),
+        content: buildPosterScanUrl(poster.referral_code),
         referralCode: poster.referral_code,
       });
       const safe = formatPosterReferralCode(poster.referral_code).replace(/[^a-zA-Z0-9_-]/g, "");
@@ -466,7 +466,7 @@ export async function submitPosterProof(input: SubmitPosterProofInput): Promise<
       locationAccuracy: input.locationAccuracy ?? null,
       metadata: {
         auto_verified: true,
-        expected_url: buildPosterScanUrl(poster.qr_code_token),
+        expected_url: buildPosterScanUrl(poster.referral_code),
       },
     });
 
@@ -495,7 +495,7 @@ export async function submitPosterProof(input: SubmitPosterProofInput): Promise<
       metadata: {
         auto_verified: true,
         auto_matched_from_poster_id: poster.id,
-        expected_url: buildPosterScanUrl(matchedPoster.qr_code_token),
+        expected_url: buildPosterScanUrl(matchedPoster.referral_code),
       },
     });
 
@@ -527,7 +527,7 @@ export async function submitPosterProof(input: SubmitPosterProofInput): Promise<
     locationAccuracy: input.locationAccuracy ?? null,
     metadata: {
       auto_verification_result: detectedQrCodes.length === 0 ? "qr_not_found" : "no_match",
-      expected_url: buildPosterScanUrl(poster.qr_code_token),
+      expected_url: buildPosterScanUrl(poster.referral_code),
     },
   });
 

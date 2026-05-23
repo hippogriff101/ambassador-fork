@@ -73,7 +73,7 @@ function randomFromCharset(charset: string, length: number) {
 
 async function generateUniqueReferralCode() {
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    const candidate = randomFromCharset(POSTER_REFERRAL_CODE_ALPHABET, 5);
+    const candidate = `a-${randomFromCharset(POSTER_REFERRAL_CODE_ALPHABET, 5)}`;
     if (!(await referralCodeExists(candidate))) {
       return candidate;
     }

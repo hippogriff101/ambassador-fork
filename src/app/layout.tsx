@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app.metadata");
 
   return {
-    metadataBase: new URL("https://ambassadors.hackclub.com"),
+    metadataBase: new URL("https://ambassador.hackclub.com"),
     title: t("title"),
     description: t("description"),
   };

@@ -114,7 +114,7 @@ export async function generateMergedPosterGroupPdf(posters: PosterRow[]) {
     const bytes = await generatePosterPdf({
       campaignSlug: poster.campaign_slug,
       style: poster.poster_type,
-      content: buildPosterScanUrl(poster.qr_code_token),
+      content: buildPosterScanUrl(poster.referral_code),
       referralCode: poster.referral_code,
     });
     const single = await PDFDocument.load(bytes);
