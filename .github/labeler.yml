@@ -1,0 +1,4 @@
+Translation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - public/posters/stardance/regionals/**
