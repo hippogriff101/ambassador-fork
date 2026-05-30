@@ -578,6 +578,10 @@ admin:
       applicants-detail: "{count} total form submissions"
       pending-review: Pending Review
       pending-review-detail: "{count} latest applications already reviewed"
+      total-referrals: Total referrals
+      total-referrals-detail: "{count} completed"
+      total-posters: Total posters
+      total-posters-detail: "{count} completed"
     charts:
       recent-activity-eyebrow: Recent activity
       recent-activity-title: Recent activity
@@ -593,6 +597,14 @@ admin:
       top-ambassadors-empty: No ambassadors with posters or referrals yet.
       top-ambassadors-all-metrics: All metrics
       top-ambassadors-metrics-noun: metrics
+      top-ambassadors-loading: Loading ambassadors...
+      top-ambassadors-page: "Page {current} of {total}"
+      top-ambassadors-prev: Previous page
+      top-ambassadors-next: Next page
+      top-ambassadors-ranges:
+        last-seven-days: Last 7 Days
+        last-month: Last Month
+        all-time: All Time
       referrals:
         total: Total referrals
         rsvp: RSVPs

@@ -3,7 +3,6 @@ import {
   type DashboardActivityPoint,
   type DashboardBreakdownPoint,
   type DashboardFunnelPoint,
-  type DashboardTopAmbassadorPoint,
 } from "@/components/admin/admin-dashboard-charts";
 import Icon from "@hackclub/icons";
 import type { Metadata } from "next";
@@ -18,6 +17,7 @@ import {
 } from "@/lib/applications/status";
 import sql from "@/lib/database/client";
 import { ensureSchema } from "@/lib/database/ensure-schema";
+import { loadTopAmbassadors } from "@/lib/admin/top-ambassadors";
 
 type SummaryRow = {
   visitor_count: number;
@@ -61,16 +61,6 @@ type PosterStatusRow = {
   digital_count: number;
 };
 
-type TopAmbassadorRow = {
-  user_id: string;
-  display_name: string | null;
-  poster_count: number;
-  verified_poster_count: number;
-  referral_count: number;
-  verified_referral_count: number;
-  rsvp_count: number;
-};
-
 const activityRangeDays = {
   "7d": 7,
   "14d": 14,
@@ -111,7 +101,7 @@ export default async function AdminDashboard({
     outcomeRows,
     referralDropOffRows,
     posterStatusRows,
-    topAmbassadorRows,
+    topAmbassadorsData,
   ] = await Promise.all([
     sql<SummaryRow[]>`
       SELECT
@@ -235,69 +225,7 @@ export default async function AdminDashboard({
         COUNT(*) FILTER (WHERE verification_status = 'digital')::int AS digital_count
       FROM posters
     `,
-    sql<TopAmbassadorRow[]>`
-      WITH poster_counts AS (
-        SELECT
-          user_id,
-          COUNT(*)::int AS poster_count,
-          COUNT(*) FILTER (WHERE verification_status = 'success')::int AS verified_poster_count
-        FROM posters
-        GROUP BY user_id
-      ),
-      referral_counts AS (
-        SELECT
-          user_id,
-          COUNT(*)::int AS referral_count,
-          COUNT(*) FILTER (WHERE verification_status = 'verified')::int AS verified_referral_count,
-          COUNT(*) FILTER (WHERE verification_status = 'rsvp')::int AS rsvp_count
-        FROM stardance_referrals
-        GROUP BY user_id
-      ),
-      combined AS (
-        SELECT user_id FROM poster_counts
-        UNION
-        SELECT user_id FROM referral_counts
-      ),
-      metrics AS (
-        SELECT
-          u.id AS user_id,
-          u.display_name,
-          COALESCE(pc.poster_count, 0)::int AS poster_count,
-          COALESCE(pc.verified_poster_count, 0)::int AS verified_poster_count,
-          COALESCE(rc.referral_count, 0)::int AS referral_count,
-          COALESCE(rc.verified_referral_count, 0)::int AS verified_referral_count,
-          COALESCE(rc.rsvp_count, 0)::int AS rsvp_count
-        FROM combined c
-        JOIN users u ON u.id = c.user_id
-        LEFT JOIN poster_counts pc ON pc.user_id = c.user_id
-        LEFT JOIN referral_counts rc ON rc.user_id = c.user_id
-      ),
-      ranked AS (
-        SELECT
-          metrics.*,
-          ROW_NUMBER() OVER (
-            ORDER BY (verified_poster_count + verified_referral_count + rsvp_count) DESC, user_id
-          ) AS rank_total,
-          ROW_NUMBER() OVER (ORDER BY verified_poster_count DESC, user_id) AS rank_posters,
-          ROW_NUMBER() OVER (ORDER BY verified_referral_count DESC, user_id) AS rank_referrals,
-          ROW_NUMBER() OVER (ORDER BY rsvp_count DESC, user_id) AS rank_rsvps
-        FROM metrics
-      )
-      SELECT
-        user_id,
-        display_name,
-        poster_count,
-        verified_poster_count,
-        referral_count,
-        verified_referral_count,
-        rsvp_count
-      FROM ranked
-      WHERE rank_total <= 10
-         OR rank_posters <= 10
-         OR rank_referrals <= 10
-         OR rank_rsvps <= 10
-      ORDER BY (verified_poster_count + verified_referral_count + rsvp_count) DESC, user_id
-    `,
+    loadTopAmbassadors("all"),
   ]);
 
   const summary = summaryRows[0];
@@ -379,16 +307,6 @@ export default async function AdminDashboard({
     },
   ];
 
-  const topAmbassadorsData: DashboardTopAmbassadorPoint[] = topAmbassadorRows.map((row) => ({
-    userId: row.user_id,
-    name: row.display_name ?? row.user_id,
-    posters: row.poster_count,
-    verifiedPosters: row.verified_poster_count,
-    referrals: row.referral_count,
-    verifiedReferrals: row.verified_referral_count,
-    rsvps: row.rsvp_count,
-  }));
-
   const referralDropOffData: DashboardBreakdownPoint[] = [
     {
       label: t("admin.overview.charts.referrals.total"),
@@ -453,42 +371,96 @@ export default async function AdminDashboard({
   return (
     <div className="space-y-10">
       <header className="space-y-2">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] xl:items-center">
-          <h1 className="text-4xl leading-none text-white">{t("admin.overview.title")}</h1>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] xl:items-start">
+          <div className="space-y-2">
+            <h1 className="text-4xl leading-none text-white xl:flex xl:h-6 xl:items-center">
+              {t("admin.overview.title")}
+            </h1>
+            <p className="font-body text-base text-white">{t("admin.overview.description")}</p>
+          </div>
 
-          <div className="flex flex-wrap items-end gap-x-6 gap-y-3 xl:flex-nowrap xl:justify-end">
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-4 xl:flex-nowrap xl:justify-end">
             {[
               {
-                icon: "view" as const,
-                label: t("admin.overview.stats.visitors"),
-                value: numberFormatter.format(summary.total_visit_count),
+                top: {
+                  icon: "view" as const,
+                  label: t("admin.overview.stats.visitors"),
+                  value: numberFormatter.format(summary.total_visit_count),
+                },
+                bottom: undefined,
               },
               {
-                icon: "person" as const,
-                label: t("admin.overview.stats.signups"),
-                value: numberFormatter.format(summary.signup_count),
+                top: {
+                  icon: "person" as const,
+                  label: t("admin.overview.stats.signups"),
+                  value: numberFormatter.format(summary.signup_count),
+                },
+                bottom: undefined,
               },
               {
-                icon: "send" as const,
-                label: t("admin.overview.stats.applicants"),
-                value: numberFormatter.format(summary.applicant_count),
+                top: {
+                  icon: "send" as const,
+                  label: t("admin.overview.stats.applicants"),
+                  value: numberFormatter.format(summary.applicant_count),
+                },
+                bottom: {
+                  icon: "friend" as const,
+                  label: t("admin.overview.stats.total-referrals"),
+                  value: numberFormatter.format(referralDropOff.total_count),
+                  detail: t("admin.overview.stats.total-referrals-detail", {
+                    count: referralDropOff.verified_count,
+                  }),
+                },
               },
               {
-                icon: "clock" as const,
-                label: t("admin.overview.stats.pending-review"),
-                value: numberFormatter.format(summary.pending_count),
+                top: {
+                  icon: "clock" as const,
+                  label: t("admin.overview.stats.pending-review"),
+                  value: numberFormatter.format(summary.pending_count),
+                },
+                bottom: {
+                  icon: "photo" as const,
+                  label: t("admin.overview.stats.total-posters"),
+                  value: numberFormatter.format(posterStatus.total_count),
+                  detail: t("admin.overview.stats.total-posters-detail", {
+                    count: posterStatus.success_count,
+                  }),
+                },
               },
-            ].map((stat) => (
-              <div key={stat.label} className="flex shrink-0 items-center gap-2.5 whitespace-nowrap">
-                <Icon glyph={stat.icon} size={24} className="self-center text-white" />
-                <span className="text-2xl leading-none text-white">{stat.value}</span>
-                <span className="font-body text-base leading-none text-white">{stat.label}</span>
+            ].map((column) => (
+              <div
+                key={column.top.label}
+                className="grid shrink-0 grid-cols-[auto_auto_auto] items-baseline gap-x-2.5 whitespace-nowrap"
+              >
+                <Icon glyph={column.top.icon} size={24} className="self-center text-white" />
+                <span className="text-2xl leading-none text-white tabular-nums">
+                  {column.top.value}
+                </span>
+                <span className="font-body text-base leading-none text-white">
+                  {column.top.label}
+                </span>
+                {column.bottom ? (
+                  <>
+                    <Icon
+                      glyph={column.bottom.icon}
+                      size={24}
+                      className="col-start-1 mt-4 self-center text-white"
+                    />
+                    <span className="mt-4 text-2xl leading-none text-white tabular-nums">
+                      {column.bottom.value}
+                    </span>
+                    <span className="mt-4 font-body text-base leading-none text-white">
+                      {column.bottom.label}
+                    </span>
+                    <span className="col-start-3 mt-1 font-body text-xs font-bold leading-none text-white">
+                      {column.bottom.detail}
+                    </span>
+                  </>
+                ) : null}
               </div>
             ))}
           </div>
         </div>
-
-        <p className="font-body text-base text-white">{t("admin.overview.description")}</p>
       </header>
 
       <AdminDashboardCharts

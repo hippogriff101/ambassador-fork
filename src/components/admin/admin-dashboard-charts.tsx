@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -105,6 +106,29 @@ const TOP_AMBASSADOR_METRICS: {
   { key: "referrals", dataKey: "verifiedReferrals", fill: "var(--chart-rejected)" },
   { key: "rsvps", dataKey: "rsvps", fill: "var(--chart-signups)" },
 ];
+
+type TopAmbassadorRange = "7d" | "month" | "all";
+
+function isTopAmbassadorPointArray(value: unknown): value is DashboardTopAmbassadorPoint[] {
+  return (
+    Array.isArray(value) &&
+    value.every((entry) => {
+      if (typeof entry !== "object" || entry === null) {
+        return false;
+      }
+
+      return (
+        typeof Reflect.get(entry, "userId") === "string" &&
+        typeof Reflect.get(entry, "name") === "string" &&
+        typeof Reflect.get(entry, "posters") === "number" &&
+        typeof Reflect.get(entry, "verifiedPosters") === "number" &&
+        typeof Reflect.get(entry, "referrals") === "number" &&
+        typeof Reflect.get(entry, "verifiedReferrals") === "number" &&
+        typeof Reflect.get(entry, "rsvps") === "number"
+      );
+    })
+  );
+}
 
 export function AdminDashboardCharts({
   activityData,
@@ -397,6 +421,7 @@ function TopAmbassadorsChart({
   locale: string;
   messages: AdminDashboardChartsProps["messages"];
 }) {
+  const t = useTranslations("admin.overview.charts");
   const metricLabels: Record<TopAmbassadorMetric, string> = {
     posters: messages.postersSeries,
     referrals: messages.referralsSeries,
@@ -405,10 +430,76 @@ function TopAmbassadorsChart({
   const [selected, setSelected] = useState<Set<TopAmbassadorMetric>>(
     () => new Set(TOP_AMBASSADOR_METRICS.map((metric) => metric.key)),
   );
+  const [range, setRange] = useState<TopAmbassadorRange>("all");
+  // Seed the cache with the server-rendered all-time data so the default view
+  // paints instantly; other ranges are fetched lazily and memoized here.
+  const [cache, setCache] = useState<
+    Partial<Record<TopAmbassadorRange, DashboardTopAmbassadorPoint[]>>
+  >(() => ({ all: data }));
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // Keep the all-time entry fresh when the server re-renders with new data.
+  useEffect(() => {
+    setCache((prev) => ({ ...prev, all: data }));
+  }, [data]);
+
+  const rangeData = cache[range];
+
+  // Fetch the selected range on demand; cached ranges short-circuit.
+  useEffect(() => {
+    if (rangeData !== undefined) {
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
+    async function loadRange() {
+      try {
+        const response = await fetch(`/api/admin/top-ambassadors?range=${range}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          return;
+        }
+        const result = (await response.json()) as unknown;
+        const ambassadors =
+          typeof result === "object" && result !== null
+            ? Reflect.get(result, "ambassadors")
+            : null;
+        if (!cancelled && isTopAmbassadorPointArray(ambassadors)) {
+          setCache((prev) => ({ ...prev, [range]: ambassadors }));
+        }
+      } catch {
+        // Swallow — the chart falls back to the empty state on failure.
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadRange();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [range, rangeData]);
+
+  // Reset to the first page whenever the view (range or metric filter) changes.
+  useEffect(() => {
+    setPage(1);
+  }, [range, selected]);
+
   const activeMetrics = TOP_AMBASSADOR_METRICS.filter((metric) => selected.has(metric.key));
 
   const sortedData = useMemo(() => {
-    return [...data]
+    if (rangeData === undefined) {
+      return [];
+    }
+
+    return [...rangeData]
       .map((entry) => ({
         ...entry,
         total: activeMetrics.reduce(
@@ -417,67 +508,121 @@ function TopAmbassadorsChart({
         ),
       }))
       // Stable, deterministic tie-break by name so equal totals don't reshuffle.
-      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
-      // The server sends the union of each metric's top-10 candidates; once the
-      // active filter is applied we only ever show the top 10 of that view.
-      .slice(0, 10);
-  }, [data, activeMetrics]);
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+  }, [rangeData, activeMetrics]);
 
-  const chartHeight = Math.max(240, sortedData.length * 44);
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(sortedData.length / pageSize));
+  const safePage = Math.min(page, pageCount);
+  const pageData = sortedData.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const chartHeight = Math.max(240, pageData.length * 44);
+  const isPending = loading && rangeData === undefined;
 
   return (
     <div className="p-6">
       <div className="min-w-0">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl text-white">{messages.topAmbassadorsTitle}</h2>
-          <MetricMultiSelect
-            metrics={TOP_AMBASSADOR_METRICS.map((metric) => metric.key)}
-            labels={metricLabels}
-            selected={selected}
-            onChange={setSelected}
-            allLabel={messages.topAmbassadorsAllMetrics}
-            selectionNoun={messages.topAmbassadorsMetricsNoun}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "all" as const, label: t("top-ambassadors-ranges.all-time") },
+                { value: "7d" as const, label: t("top-ambassadors-ranges.last-seven-days") },
+                { value: "month" as const, label: t("top-ambassadors-ranges.last-month") },
+              ].map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="app-sm"
+                  variant="destructive"
+                  selected={option.value === range}
+                  aria-pressed={option.value === range}
+                  onClick={() => setRange(option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+            <MetricMultiSelect
+              metrics={TOP_AMBASSADOR_METRICS.map((metric) => metric.key)}
+              labels={metricLabels}
+              selected={selected}
+              onChange={setSelected}
+              allLabel={messages.topAmbassadorsAllMetrics}
+              selectionNoun={messages.topAmbassadorsMetricsNoun}
+            />
+          </div>
         </div>
-        {data.length === 0 ? (
+        {isPending ? (
+          <p className="font-body text-base text-white/50">{t("top-ambassadors-loading")}</p>
+        ) : pageData.length === 0 ? (
           <p className="font-body text-base text-white">{messages.topAmbassadorsEmpty}</p>
         ) : (
-          <div className="min-w-0" style={{ height: `${chartHeight}px` }}>
-            <DashboardResponsiveChart height={chartHeight}>
-              <BarChart
-                data={sortedData}
-                layout="vertical"
-                margin={{ top: 8, right: 16, left: 12, bottom: 8 }}
-              >
-                <XAxis
-                  type="number"
-                  tick={{ fill: "var(--foreground)", fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={<AmbassadorTick data={sortedData} />}
-                  axisLine={false}
-                  tickLine={false}
-                  width={160}
-                />
-                <Tooltip cursor={false} content={<ChartTooltip locale={locale} />} />
-                {activeMetrics.map((metric, index) => (
-                  <Bar
-                    key={metric.key}
-                    dataKey={metric.dataKey}
-                    name={metricLabels[metric.key]}
-                    stackId="a"
-                    fill={metric.fill}
-                    radius={index === activeMetrics.length - 1 ? [0, 10, 10, 0] : [0, 0, 0, 0]}
+          <>
+            <div className="min-w-0" style={{ height: `${chartHeight}px` }}>
+              <DashboardResponsiveChart height={chartHeight}>
+                <BarChart
+                  data={pageData}
+                  layout="vertical"
+                  margin={{ top: 8, right: 16, left: 12, bottom: 8 }}
+                >
+                  <XAxis
+                    type="number"
+                    tick={{ fill: "var(--foreground)", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    allowDecimals={false}
                   />
-                ))}
-              </BarChart>
-            </DashboardResponsiveChart>
-          </div>
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tick={<AmbassadorTick data={pageData} />}
+                    axisLine={false}
+                    tickLine={false}
+                    width={160}
+                  />
+                  <Tooltip cursor={false} content={<ChartTooltip locale={locale} />} />
+                  {activeMetrics.map((metric, index) => (
+                    <Bar
+                      key={metric.key}
+                      dataKey={metric.dataKey}
+                      name={metricLabels[metric.key]}
+                      stackId="a"
+                      fill={metric.fill}
+                      radius={index === activeMetrics.length - 1 ? [0, 10, 10, 0] : [0, 0, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
+              </DashboardResponsiveChart>
+            </div>
+            {pageCount > 1 && (
+              <div className="mt-4 flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="destructive"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={safePage <= 1}
+                  aria-label={t("top-ambassadors-prev")}
+                >
+                  <ChevronLeftIcon />
+                </Button>
+                <span className="font-body text-sm text-white tabular-nums">
+                  {t("top-ambassadors-page", { current: safePage, total: pageCount })}
+                </span>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="destructive"
+                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                  disabled={safePage >= pageCount}
+                  aria-label={t("top-ambassadors-next")}
+                >
+                  <ChevronRightIcon />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
