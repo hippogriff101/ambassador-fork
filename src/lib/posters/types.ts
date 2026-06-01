@@ -9,7 +9,7 @@ export const POSTER_VERIFICATION_STATUSES = [
 ] as const;
 export const POSTER_GROUP_CHARSETS = ["alphanumeric", "numeric", "alpha"] as const;
 
-export const MAX_POSTERS_PER_GROUP = 20;
+export const MAX_POSTERS_PER_GROUP = 30;
 export const MAX_POSTERS_PER_USER = 5000;
 export const REFERRAL_CODE_LENGTH = 5;
 
